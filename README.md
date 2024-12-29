@@ -1,9 +1,11 @@
 # IDN Remote Entry
 
-This is the system that handles submission from [Submit Remote Job for Indonesian Talents](https://docs.google.com/forms/d/e/1FAIpQLSczxOnMSt-sK9X5e4tbccblbml0ik1r2fHKKCW-FST3hls5uQ/viewform?pli=1).
+This system handles submissions from the [Submit Remote Job for Indonesian Talents](https://docs.google.com/forms/d/e/1FAIpQLSczxOnMSt-sK9X5e4tbccblbml0ik1r2fHKKCW-FST3hls5uQ/viewform?pli=1) form.
 
-The reason why we are still using Google Form instead creating our own web app is because Google Form is much easier to setup, plus it comes with Google authentication out of the box. Since our goal is just to make it easy for community to submit remote vacancy, I think this kind of setup should be enough.
+We opted to use Google Forms instead of creating a custom web app because it is much easier to set up and comes with built-in Google authentication. Since our primary goal is to simplify the process for the community to submit remote vacancies, this setup should be sufficient.
 
-Here is the business logic for this system:
+Checkout the REST API documentation for this system [here](./docs/rest_api.md).
 
-![Business Logic](./business-logic.drawio.svg)
+Below is the business logic for this system:
+
+![Business Logic](./docs/business-logic.drawio.svg)
