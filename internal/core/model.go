@@ -12,6 +12,11 @@ type SubmitRequest struct {
 	Vacancy
 }
 
+func (r SubmitRequest) Validate() error {
+	// TODO
+	return nil
+}
+
 type Vacancy struct {
 	JobTitle         string   `json:"job_title"`
 	CompanyName      string   `json:"company_name"`
