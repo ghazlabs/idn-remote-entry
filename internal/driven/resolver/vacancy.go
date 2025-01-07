@@ -53,25 +53,28 @@ func (r *VacancyResolver) Resolve(ctx context.Context, url string) (*core.Vacanc
 		return nil, fmt.Errorf("unable to parse the vacancy information: %w", err)
 	}
 
-	// lookup to google to get the company HQ location
-	textLocation, err := r.getTextContent(ctx, fmt.Sprintf("https://duckduckgo.com/html/?q=%s HQ Location", vacInfo.CompanyName))
-	if err != nil {
-		return nil, fmt.Errorf("failed to get reference of the company HQ location: %w", err)
-	}
+	if len(vacInfo.CompanyLocation) == 0 {
+		// lookup to duckduckgo to get the company HQ location, if it is not found in the previous step
+		textLocation, err := r.getTextContent(ctx, fmt.Sprintf("https://duckduckgo.com/html/?q=%s HQ Location", vacInfo.CompanyName))
+		if err != nil {
+			return nil, fmt.Errorf("failed to get reference of the company HQ location: %w", err)
+		}
 
-	// call the OpenAI API to get the company HQ location
-	locInfo, err := callOpenAI[locationInfo](ctx, r.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{
-		openai.SystemMessage("You will be given a text content for a company location and you need to parse the location information from it."),
-		openai.UserMessage(textLocation),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse the location information: %w", err)
+		// call the OpenAI API to get the company HQ location
+		locInfo, err := callOpenAI[locationInfo](ctx, r.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{
+			openai.SystemMessage("You will be given a text content for a company location and you need to parse the location information from it."),
+			openai.UserMessage(textLocation),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse the location information: %w", err)
+		}
+		vacInfo.CompanyLocation = locInfo.Location
 	}
 
 	vac := &core.Vacancy{
 		JobTitle:         vacInfo.JobTitle,
 		CompanyName:      vacInfo.CompanyName,
-		CompanyLocation:  locInfo.Location,
+		CompanyLocation:  vacInfo.CompanyLocation,
 		ShortDescription: vacInfo.ShortDescription,
 		RelevantTags:     vacInfo.RelevantTags,
 		ApplyURL:         url,
