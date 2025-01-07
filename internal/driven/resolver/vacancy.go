@@ -3,12 +3,15 @@ package resolver
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/chromedp/chromedp"
 	"github.com/ghazlabs/idn-remote-entry/internal/core"
 	"github.com/go-resty/resty/v2"
 	"github.com/openai/openai-go"
@@ -36,16 +39,15 @@ func NewVacancyResolver(cfg VacancyResolverConfig) (*VacancyResolver, error) {
 
 func (r *VacancyResolver) Resolve(ctx context.Context, url string) (*core.Vacancy, error) {
 	// get the text content of the URL
-	urlContent, err := r.getTextContent(ctx, url)
+	screenshot, err := r.takeScreenshot(ctx, url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get the text content of the URL: %w", err)
+		return nil, fmt.Errorf("failed to take the screenshot of the URL: %w", err)
 	}
-	log.Printf("URL Content: %s", urlContent)
 
 	// call the OpenAI API to parse the vacancy information
 	vacInfo, err := callOpenAI[vacancyInfo](ctx, r.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{
-		openai.SystemMessage("You will be given vacancy description and you need to parse the information from it."),
-		openai.UserMessage(urlContent),
+		openai.SystemMessage("You will be given vacancy description from the image and you need to parse the information from it."),
+		openai.UserMessageParts(openai.ImagePart(fmt.Sprintf("data:image/png;base64,%s", base64.StdEncoding.EncodeToString(screenshot)))),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse the vacancy information: %w", err)
@@ -76,6 +78,27 @@ func (r *VacancyResolver) Resolve(ctx context.Context, url string) (*core.Vacanc
 	}
 
 	return vac, nil
+}
+
+func (r *VacancyResolver) takeScreenshot(ctx context.Context, url string) ([]byte, error) {
+	// create context for chrome
+	ctx, cancel := chromedp.NewContext(ctx)
+	defer cancel()
+
+	// allocate a buffer to store the screenshot
+	var buf []byte
+
+	// capture the screenshot
+	err := chromedp.Run(ctx,
+		chromedp.Navigate(url),
+		chromedp.Sleep(3*time.Second),
+		chromedp.FullScreenshot(&buf, 100),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to take the screenshot: %w", err)
+	}
+
+	return buf, nil
 }
 
 func (r *VacancyResolver) getTextContent(ctx context.Context, url string) (string, error) {

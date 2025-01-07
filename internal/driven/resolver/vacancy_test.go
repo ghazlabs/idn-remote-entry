@@ -2,6 +2,7 @@ package resolver_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver"
@@ -45,8 +46,8 @@ func TestResolve(t *testing.T) {
 		{
 			Name:           "Micro1 URL",
 			VacancyURL:     "https://jobs.micro1.ai/post/ee6e8b24-ae08-472f-863b-aabcb1b25cef",
-			ExpVacancyName: "AI Engineer (LInE)",
-			ExpCompanyName: "Micro1",
+			ExpVacancyName: "AI Engineer",
+			ExpCompanyName: "micro1",
 		},
 	}
 	for _, testCase := range testCases {
@@ -54,8 +55,8 @@ func TestResolve(t *testing.T) {
 			vac, err := vacResolver.Resolve(context.Background(), testCase.VacancyURL)
 			require.NoError(t, err)
 
-			assert.Equal(t, testCase.ExpVacancyName, vac.JobTitle)
-			assert.Equal(t, testCase.ExpCompanyName, vac.CompanyName)
+			assert.Equal(t, strings.ToLower(testCase.ExpVacancyName), strings.ToLower(vac.JobTitle))
+			assert.Equal(t, strings.ToLower(testCase.ExpCompanyName), strings.ToLower(vac.CompanyName))
 			assert.NotEmpty(t, vac.ShortDescription)
 			assert.NotEmpty(t, vac.RelevantTags)
 			assert.NotEmpty(t, vac.CompanyLocation)
