@@ -9,8 +9,3 @@ type Storage interface {
 type VacancyResolver interface {
 	Resolve(ctx context.Context, url string) (*Vacancy, error)
 }
-
-type Queue interface {
-	Enqueue(ctx context.Context, req SubmitRequest) error
-	Dequeue(ctx context.Context) (*SubmitRequest, error)
-}

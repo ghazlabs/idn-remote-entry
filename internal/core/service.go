@@ -7,46 +7,34 @@ import (
 	"gopkg.in/validator.v2"
 )
 
-type WorkerService interface {
-	Execute(ctx context.Context) error
+type Service interface {
+	Handle(ctx context.Context, req SubmitRequest) error
 }
 
-type WorkerServiceConfig struct {
+type ServiceConfig struct {
 	Storage         Storage         `validate:"nonnil"`
 	VacancyResolver VacancyResolver `validate:"nonnil"`
-	Queue           Queue           `validate:"nonnil"`
 }
 
-func NewWorkerService(cfg WorkerServiceConfig) (WorkerService, error) {
+func NewService(cfg ServiceConfig) (Service, error) {
 	// validate config
 	err := validator.Validate(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
 
-	return &workerService{
-		WorkerServiceConfig: cfg,
+	return &service{
+		ServiceConfig: cfg,
 	}, nil
 }
 
-type workerService struct {
-	WorkerServiceConfig
+type service struct {
+	ServiceConfig
 }
 
-func (s *workerService) Execute(ctx context.Context) error {
-	// fetch submit request from queue
-	req, err := s.Queue.Dequeue(ctx)
-	if err != nil {
-		return fmt.Errorf("unable to dequeue due: %w", err)
-	}
-
-	// if there is no request in the queue just return
-	if req == nil {
-		return nil
-	}
-
+func (s *service) Handle(ctx context.Context, req SubmitRequest) error {
 	// validate request ensure it is valid request
-	err = req.Validate()
+	err := req.Validate()
 	if err != nil {
 		return NewBadRequestError(err.Error())
 	}
