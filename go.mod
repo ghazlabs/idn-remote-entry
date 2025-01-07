@@ -6,7 +6,11 @@ require gopkg.in/validator.v2 v2.0.1
 
 require (
 	github.com/PuerkitoBio/goquery v1.10.1
+	github.com/Rican7/conjson v0.1.0
 	github.com/chromedp/chromedp v0.11.2
+	github.com/go-chi/chi/v5 v5.2.0
+	github.com/go-chi/cors v1.2.1
+	github.com/go-chi/render v1.0.3
 	github.com/go-resty/resty/v2 v2.16.2
 	github.com/invopop/jsonschema v0.13.0
 	github.com/openai/openai-go v0.1.0-alpha.43
@@ -14,6 +18,7 @@ require (
 )
 
 require (
+	github.com/ajg/form v1.5.1 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
