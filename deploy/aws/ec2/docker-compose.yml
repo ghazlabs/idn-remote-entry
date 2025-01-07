@@ -1,0 +1,13 @@
+services:
+  server:
+    build:
+      context: ../../../
+      dockerfile: ./build/package/server/Dockerfile
+    environment:
+      - NOTION_DATABASE_ID=1513500463578004800ddbcbcb020f73 # this is prod table
+      - NOTION_TOKEN=${IDN_REMOTE_ENTRY_NOTION_TOKEN}
+      - OPENAI_KEY=${IDN_REMOTE_ENTRY_OPENAI_KEY}
+      - LISTEN_PORT=9864
+      - CLIENT_API_KEY=ac460dcc-9a00-4c23-ae7b-212df5f39b3a
+    ports:
+      - "9864:9864"

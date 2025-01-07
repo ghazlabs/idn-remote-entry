@@ -23,7 +23,7 @@ type VacancyResolver struct {
 }
 
 type VacancyResolverConfig struct {
-	HTTPClient    *resty.Client  `validate:"nonnil"`
+	HttpClient    *resty.Client  `validate:"nonnil"`
 	OpenaAiClient *openai.Client `validate:"nonnil"`
 }
 
@@ -53,7 +53,7 @@ func (r *VacancyResolver) Resolve(ctx context.Context, url string) (*core.Vacanc
 		return nil, fmt.Errorf("unable to parse the vacancy information: %w", err)
 	}
 
-	if len(vacInfo.CompanyLocation) == 0 {
+	if len(vacInfo.CompanyLocation) == 0 || strings.Contains(strings.ToLower(vacInfo.CompanyLocation), "remote") {
 		// lookup to duckduckgo to get the company HQ location, if it is not found in the previous step
 		textLocation, err := r.getTextContent(ctx, fmt.Sprintf("https://duckduckgo.com/html/?q=%s HQ Location", vacInfo.CompanyName))
 		if err != nil {
@@ -95,7 +95,7 @@ func (r *VacancyResolver) takeScreenshot(ctx context.Context, url string) ([]byt
 	err := chromedp.Run(ctx,
 		chromedp.Navigate(url),
 		chromedp.Sleep(3*time.Second),
-		chromedp.FullScreenshot(&buf, 100),
+		chromedp.FullScreenshot(&buf, 90),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to take the screenshot: %w", err)
@@ -106,7 +106,7 @@ func (r *VacancyResolver) takeScreenshot(ctx context.Context, url string) ([]byt
 
 func (r *VacancyResolver) getTextContent(ctx context.Context, url string) (string, error) {
 	// get the html content of the URL
-	resp, err := r.HTTPClient.R().SetContext(ctx).Get(url)
+	resp, err := r.HttpClient.R().SetContext(ctx).Get(url)
 	if err != nil {
 		return "", fmt.Errorf("failed to open the URL: %w", err)
 	}
@@ -147,7 +147,8 @@ func callOpenAI[T any](
 				JSONSchema: openai.F(schemaParam),
 			},
 		),
-		Model: openai.String(openai.ChatModelGPT4o2024_08_06),
+		Temperature: openai.Float(0.0),
+		Model:       openai.String(openai.ChatModelGPT4o2024_08_06),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call the OpenAI API: %w", err)

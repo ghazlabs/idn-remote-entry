@@ -6,7 +6,6 @@ require gopkg.in/validator.v2 v2.0.1
 
 require (
 	github.com/PuerkitoBio/goquery v1.10.1
-	github.com/Rican7/conjson v0.1.0
 	github.com/chromedp/chromedp v0.11.2
 	github.com/go-chi/chi/v5 v5.2.0
 	github.com/go-chi/cors v1.2.1
@@ -14,6 +13,7 @@ require (
 	github.com/go-resty/resty/v2 v2.16.2
 	github.com/invopop/jsonschema v0.13.0
 	github.com/openai/openai-go v0.1.0-alpha.43
+	github.com/riandyrn/go-env v1.1.1
 	github.com/stretchr/testify v1.8.1
 )
 

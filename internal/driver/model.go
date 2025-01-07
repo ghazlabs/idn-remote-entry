@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Rican7/conjson"
-	"github.com/Rican7/conjson/transform"
 	"github.com/ghazlabs/idn-remote-entry/internal/core"
 	"github.com/go-chi/render"
 )
@@ -29,7 +27,7 @@ func NewSuccessResp(data interface{}) *RespBody {
 	return &RespBody{
 		StatusCode: http.StatusOK,
 		OK:         true,
-		Data:       conjson.NewMarshaler(data, transform.ConventionalKeys()),
+		Data:       data,
 	}
 }
 

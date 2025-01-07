@@ -14,7 +14,7 @@ import (
 
 func TestResolve(t *testing.T) {
 	vacResolver, err := resolver.NewVacancyResolver(resolver.VacancyResolverConfig{
-		HTTPClient:    resty.New(),
+		HttpClient:    resty.New(),
 		OpenaAiClient: openai.NewClient(),
 	})
 	require.NoError(t, err)
@@ -29,6 +29,12 @@ func TestResolve(t *testing.T) {
 			Name:           "Greenhouse URL",
 			VacancyURL:     "https://job-boards.eu.greenhouse.io/invertase/jobs/4492528101",
 			ExpVacancyName: "Developer Advocate - Dart & Flutter Products",
+			ExpCompanyName: "Invertase",
+		},
+		{
+			Name:           "Greenhouse URL 2",
+			VacancyURL:     "https://job-boards.eu.greenhouse.io/invertase/jobs/4492621101",
+			ExpVacancyName: "Staff Software Engineer - Cloud Platforms",
 			ExpCompanyName: "Invertase",
 		},
 		{
