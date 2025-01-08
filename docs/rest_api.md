@@ -30,7 +30,7 @@ A successful call indicates that the vacancy has been submitted to the system bu
 - `company_name`, String => The name of the company owned the vacancy (e.g Canonical, LeetCode, LaunchGood, etc..).
 - `company_location`, String => The company HQ location where this job is offered (e.g London, UK).
 - `short_description`, String => The summary for the job description.
-- `relevant_tags`, String => The relevant tags for the job separated by comma.
+- `relevant_tags`, List of String => The relevant tags for the job.
 - `apply_url`, String => URL for applying the job, user can also put their email here.
 
 **Example Call:**
@@ -46,7 +46,7 @@ Content-Type: application/json
 	"company_name": "Zero Gravity",
 	"company_location": "London, UK",
 	"short_description": "Zero Gravity (zerogravity.co.uk) is a UK-based startup with a mission to help low-income students get into top universities and careers. \r\n\r\nWe are looking to expand our engineering team in 2025. It will be a fully remote role from anywhere in Indonesia, starting with a 6-month contract that can be extended to a year or more.",
-	"relevant_tags": "ruby on rails, full stack development, system design, api integration, startup",
+	"relevant_tags": ["ruby on rails", "full stack development", "system design", "api integration", "startup"],
 	"apply_url": "debbie@zerogravity.co.uk"
 }
 ```
