@@ -4,7 +4,7 @@ services:
       context: ../../../
       dockerfile: ./build/package/server/Dockerfile
     environment:
-      - NOTION_DATABASE_ID=1513500463578004800ddbcbcb020f73 # this is prod table
+      - NOTION_DATABASE_ID=${IDN_REMOTE_ENTRY_NOTION_DATABASE_ID_PROD} # this is prod table
       - NOTION_TOKEN=${IDN_REMOTE_ENTRY_NOTION_TOKEN}
       - OPENAI_KEY=${IDN_REMOTE_ENTRY_OPENAI_KEY}
       - LISTEN_PORT=9864
