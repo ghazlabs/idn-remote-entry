@@ -10,12 +10,13 @@ type VacancyInfo struct {
 	RelevantTags     []string `json:"relevant_tags" jsonschema_description:"List of tags that are relevant to the vacancy maximum 5 written in lowercase, if not found then it should be empty"`
 }
 
-func (i VacancyInfo) ToVacancy() *core.Vacancy {
+func (i VacancyInfo) ToVacancy(url string) *core.Vacancy {
 	return &core.Vacancy{
 		JobTitle:         i.JobTitle,
 		CompanyName:      i.CompanyName,
 		CompanyLocation:  i.CompanyLocation,
 		ShortDescription: i.ShortDescription,
 		RelevantTags:     i.RelevantTags,
+		ApplyURL:         url,
 	}
 }

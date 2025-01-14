@@ -112,6 +112,7 @@ func TestResolve(t *testing.T) {
 			assert.Equal(t, strings.ToLower(testCase.ExpCompanyName), strings.ToLower(vac.CompanyName))
 			assert.NotEmpty(t, vac.ShortDescription)
 			assert.NotEmpty(t, vac.RelevantTags)
+			assert.NotEmpty(t, vac.ApplyURL)
 		})
 	}
 }

@@ -40,7 +40,7 @@ func (p *OCRParser) Parse(ctx context.Context, url string) (*core.Vacancy, error
 	}
 
 	// do OCR on the screenshot
-	vac, err := p.doOCR(ctx, buf)
+	vac, err := p.doOCR(ctx, buf, url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to do OCR: %w", err)
 	}
@@ -69,7 +69,7 @@ func (p *OCRParser) takeScreenshot(ctx context.Context, url string) ([]byte, err
 	return buf, nil
 }
 
-func (p *OCRParser) doOCR(ctx context.Context, buf []byte) (*core.Vacancy, error) {
+func (p *OCRParser) doOCR(ctx context.Context, buf []byte, url string) (*core.Vacancy, error) {
 	// call the OpenAI API to parse the vacancy information
 	vacInfo, err := resolver.CallOpenAI[resolver.VacancyInfo](ctx, p.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{
 		openai.SystemMessage("You will be given vacancy description from the image and you need to parse the information from it."),
@@ -79,5 +79,5 @@ func (p *OCRParser) doOCR(ctx context.Context, buf []byte) (*core.Vacancy, error
 		return nil, fmt.Errorf("unable to parse the vacancy information: %w", err)
 	}
 
-	return vacInfo.ToVacancy(), nil
+	return vacInfo.ToVacancy(url), nil
 }

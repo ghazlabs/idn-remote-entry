@@ -47,7 +47,7 @@ func (p *GreenhouseParser) Parse(ctx context.Context, url string) (*core.Vacancy
 		return nil, fmt.Errorf("unable to parse the vacancy information: %w", err)
 	}
 
-	vac := vacInfo.ToVacancy()
+	vac := vacInfo.ToVacancy(url)
 	vac.JobTitle = jobTitle
 
 	return vac, nil
