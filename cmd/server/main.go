@@ -39,7 +39,7 @@ func main() {
 
 	// initialize parser
 	openAiClient := openai.NewClient(option.WithAPIKey(env.GetString(envKeyOpenAiKey)))
-	textParser, err := parser.NewTextParser(parser.TextParserConfig{
+	textParser, err := parser.NewGreenhouseParser(parser.GreenhouseParserConfig{
 		HttpClient:    httpClient,
 		OpenaAiClient: openAiClient,
 	})

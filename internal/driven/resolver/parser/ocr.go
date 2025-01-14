@@ -69,12 +69,6 @@ func (p *OCRParser) takeScreenshot(ctx context.Context, url string) ([]byte, err
 	return buf, nil
 }
 
-type tesseractServerResponse struct {
-	Data struct {
-		Stdout string `json:"stdout"`
-	} `json:"data"`
-}
-
 func (p *OCRParser) doOCR(ctx context.Context, buf []byte) (*core.Vacancy, error) {
 	// call the OpenAI API to parse the vacancy information
 	vacInfo, err := resolver.CallOpenAI[resolver.VacancyInfo](ctx, p.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{

@@ -14,26 +14,26 @@ import (
 	"gopkg.in/validator.v2"
 )
 
-type TextParser struct {
-	TextParserConfig
+type GreenhouseParser struct {
+	GreenhouseParserConfig
 }
 
-type TextParserConfig struct {
+type GreenhouseParserConfig struct {
 	HttpClient    *resty.Client  `validate:"nonnil"`
 	OpenaAiClient *openai.Client `validate:"nonnil"`
 }
 
-func NewTextParser(cfg TextParserConfig) (*TextParser, error) {
+func NewGreenhouseParser(cfg GreenhouseParserConfig) (*GreenhouseParser, error) {
 	if err := validator.Validate(cfg); err != nil {
 		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
-	return &TextParser{
-		TextParserConfig: cfg,
+	return &GreenhouseParser{
+		GreenhouseParserConfig: cfg,
 	}, nil
 }
 
-func (p *TextParser) Parse(ctx context.Context, url string) (*core.Vacancy, error) {
-	text, err := p.GetText(ctx, url)
+func (p *GreenhouseParser) Parse(ctx context.Context, url string) (*core.Vacancy, error) {
+	text, jobTitle, err := p.getInfo(ctx, url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get text content: %w", err)
 	}
@@ -47,20 +47,24 @@ func (p *TextParser) Parse(ctx context.Context, url string) (*core.Vacancy, erro
 		return nil, fmt.Errorf("unable to parse the vacancy information: %w", err)
 	}
 
-	return vacInfo.ToVacancy(), nil
+	vac := vacInfo.ToVacancy()
+	vac.JobTitle = jobTitle
+
+	return vac, nil
 }
 
-func (p *TextParser) GetText(ctx context.Context, url string) (string, error) {
+func (p *GreenhouseParser) getInfo(ctx context.Context, url string) (string, string, error) {
 	// get the html content of the URL
 	resp, err := p.HttpClient.R().SetContext(ctx).Get(url)
 	if err != nil {
-		return "", fmt.Errorf("failed to open the URL: %w", err)
+		return "", "", fmt.Errorf("failed to open the URL: %w", err)
 	}
 
 	// parse the HTML content
-	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(resp.Body()))
+	respBody := bytes.NewReader(resp.Body())
+	doc, err := goquery.NewDocumentFromReader(respBody)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse the HTML content: %w", err)
+		return "", "", fmt.Errorf("failed to parse the HTML content: %w", err)
 	}
 
 	// Remove <script> and <style> tags from the document
@@ -68,5 +72,9 @@ func (p *TextParser) GetText(ctx context.Context, url string) (string, error) {
 		s.Remove()
 	})
 
-	return strings.TrimSpace(doc.Find("body").Text()), nil
+	textBody := strings.TrimSpace(doc.Find("body").Text())
+	metaTag := doc.Find(`meta[property="og:title"]`)
+	jobTitle, _ := metaTag.Attr("content")
+
+	return textBody, jobTitle, nil
 }

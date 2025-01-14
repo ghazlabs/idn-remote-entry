@@ -23,7 +23,7 @@ const (
 func TestResolve(t *testing.T) {
 	httpClient := resty.New()
 	openAiClient := openai.NewClient(option.WithAPIKey(env.GetString(envKeyTestOpenAiKey)))
-	textParser, err := parser.NewTextParser(parser.TextParserConfig{
+	textParser, err := parser.NewGreenhouseParser(parser.GreenhouseParserConfig{
 		HttpClient:    httpClient,
 		OpenaAiClient: openAiClient,
 	})
@@ -82,6 +82,18 @@ func TestResolve(t *testing.T) {
 			ExpVacancyName: "Backend Engineer, Digital Venture - Fully REMOTE",
 			ExpCompanyName: "Makro Pro",
 		},
+		{
+			Name:           "Dynatrace URL",
+			VacancyURL:     "https://careers.dynatrace.com/jobs/1243381900/",
+			ExpVacancyName: "Sr Customer Success Engineer",
+			ExpCompanyName: "Dynatrace",
+		},
+		{
+			Name:           "Goodnotes URL",
+			VacancyURL:     "https://job-boards.greenhouse.io/goodnotes/jobs/5158740004",
+			ExpVacancyName: "Lead iOS Engineer (Indonesia Remote)",
+			ExpCompanyName: "Goodnotes",
+		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
@@ -96,5 +108,4 @@ func TestResolve(t *testing.T) {
 			assert.NotEmpty(t, vac.RelevantTags)
 		})
 	}
-
 }
