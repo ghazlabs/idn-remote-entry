@@ -1,5 +1,9 @@
 .PHONY: *
 
+test:
+	docker compose -f ./deploy/local/integration_test/docker-compose.yml down --remove-orphans
+	docker compose -f ./deploy/local/integration_test/docker-compose.yml up --build --exit-code-from=integration-test
+
 run:
 	-docker compose -f ./deploy/local/run/docker-compose.yml down --remove-orphans
 	docker compose -f ./deploy/local/run/docker-compose.yml up --build

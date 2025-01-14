@@ -1,0 +1,10 @@
+services:
+  integration-test:
+    build:
+      context: ../../../
+      dockerfile: ./build/package/integration_test/Dockerfile
+    environment:
+      - TEST_OPENAI_KEY=${IDN_REMOTE_ENTRY_OPENAI_KEY}
+    entrypoint: "go test -timeout=1m30s ./..."
+    volumes:
+      - ../../../internal:/go/src/github.com/ghazlabs/idn-remote-entry/internal
