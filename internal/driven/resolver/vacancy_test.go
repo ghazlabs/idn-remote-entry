@@ -22,19 +22,20 @@ const (
 
 func TestResolve(t *testing.T) {
 	httpClient := resty.New()
+	openAiClient := openai.NewClient(option.WithAPIKey(env.GetString(envKeyTestOpenAiKey)))
 	textParser, err := parser.NewTextParser(parser.TextParserConfig{
-		HttpClient: httpClient,
+		HttpClient:    httpClient,
+		OpenaAiClient: openAiClient,
 	})
 	require.NoError(t, err)
 
 	ocrParser, err := parser.NewOCRParser(parser.OCRParserConfig{
-		HttpClient:        httpClient,
-		TesseractEndpoint: env.GetString(envKeyTesseractEndpoint),
+		HttpClient:    httpClient,
+		OpenaAiClient: openAiClient,
 	})
 	require.NoError(t, err)
 
 	vacResolver, err := resolver.NewVacancyResolver(resolver.VacancyResolverConfig{
-		OpenaAiClient: openai.NewClient(option.WithAPIKey(env.GetString(envKeyTestOpenAiKey))),
 		ParserRegistries: []resolver.ParserRegistry{
 			{
 				ApexDomains: []string{"greenhouse.io"},
@@ -74,6 +75,12 @@ func TestResolve(t *testing.T) {
 			VacancyURL:     "https://job-boards.greenhouse.io/remotecom/jobs/6322023003",
 			ExpVacancyName: "Lifecycle Specialist: Contracts Management - APAC",
 			ExpCompanyName: "Remote",
+		},
+		{
+			Name:           "Makro Pro URL",
+			VacancyURL:     "https://apply.workable.com/joinmakropro/j/A182E331FE/",
+			ExpVacancyName: "Backend Engineer, Digital Venture - Fully REMOTE",
+			ExpCompanyName: "Makro Pro",
 		},
 	}
 	for _, testCase := range testCases {

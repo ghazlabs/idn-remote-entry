@@ -18,12 +18,11 @@ import (
 )
 
 const (
-	envKeyNotionDatabaseID  = "NOTION_DATABASE_ID"
-	envKeyNotionToken       = "NOTION_TOKEN"
-	envKeyOpenAiKey         = "OPENAI_KEY"
-	envKeyListenPort        = "LISTEN_PORT"
-	envKeyClientApiKey      = "CLIENT_API_KEY"
-	envKeyTesseractEndpoint = "TESSERACT_ENDPOINT"
+	envKeyNotionDatabaseID = "NOTION_DATABASE_ID"
+	envKeyNotionToken      = "NOTION_TOKEN"
+	envKeyOpenAiKey        = "OPENAI_KEY"
+	envKeyListenPort       = "LISTEN_PORT"
+	envKeyClientApiKey     = "CLIENT_API_KEY"
 )
 
 func main() {
@@ -39,15 +38,17 @@ func main() {
 	}
 
 	// initialize parser
+	openAiClient := openai.NewClient(option.WithAPIKey(env.GetString(envKeyOpenAiKey)))
 	textParser, err := parser.NewTextParser(parser.TextParserConfig{
-		HttpClient: httpClient,
+		HttpClient:    httpClient,
+		OpenaAiClient: openAiClient,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize text parser: %v", err)
 	}
 	ocrParser, err := parser.NewOCRParser(parser.OCRParserConfig{
-		HttpClient:        httpClient,
-		TesseractEndpoint: env.GetString(envKeyTesseractEndpoint),
+		HttpClient:    httpClient,
+		OpenaAiClient: openAiClient,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize OCR parser: %v", err)
@@ -55,7 +56,6 @@ func main() {
 
 	// initialize resolver
 	rslvr, err := resolver.NewVacancyResolver(resolver.VacancyResolverConfig{
-		OpenaAiClient: openai.NewClient(option.WithAPIKey(env.GetString(envKeyOpenAiKey))),
 		DefaultParser: ocrParser,
 		ParserRegistries: []resolver.ParserRegistry{
 			{

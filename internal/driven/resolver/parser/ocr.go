@@ -1,13 +1,16 @@
 package parser
 
 import (
-	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"time"
 
 	"github.com/chromedp/chromedp"
+	"github.com/ghazlabs/idn-remote-entry/internal/core"
+	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver"
 	"github.com/go-resty/resty/v2"
+	"github.com/openai/openai-go"
 	"gopkg.in/validator.v2"
 )
 
@@ -16,8 +19,8 @@ type OCRParser struct {
 }
 
 type OCRParserConfig struct {
-	HttpClient        *resty.Client `validate:"nonnil"`
-	TesseractEndpoint string        `validate:"nonzero"`
+	HttpClient    *resty.Client  `validate:"nonnil"`
+	OpenaAiClient *openai.Client `validate:"nonnil"`
 }
 
 func NewOCRParser(cfg OCRParserConfig) (*OCRParser, error) {
@@ -29,20 +32,20 @@ func NewOCRParser(cfg OCRParserConfig) (*OCRParser, error) {
 	}, nil
 }
 
-func (p *OCRParser) GetText(ctx context.Context, url string) (string, error) {
+func (p *OCRParser) Parse(ctx context.Context, url string) (*core.Vacancy, error) {
 	// take a screenshot of the URL
 	buf, err := p.takeScreenshot(ctx, url)
 	if err != nil {
-		return "", fmt.Errorf("failed to take the screenshot: %w", err)
+		return nil, fmt.Errorf("failed to take the screenshot: %w", err)
 	}
 
 	// do OCR on the screenshot
-	text, err := p.doOCR(ctx, buf)
+	vac, err := p.doOCR(ctx, buf)
 	if err != nil {
-		return "", fmt.Errorf("failed to do OCR: %w", err)
+		return nil, fmt.Errorf("failed to do OCR: %w", err)
 	}
 
-	return text, nil
+	return vac, nil
 }
 
 func (p *OCRParser) takeScreenshot(ctx context.Context, url string) ([]byte, error) {
@@ -72,19 +75,15 @@ type tesseractServerResponse struct {
 	} `json:"data"`
 }
 
-func (p *OCRParser) doOCR(ctx context.Context, buf []byte) (string, error) {
-	// call tesseract server to do OCR
-	var serverResp tesseractServerResponse
-	_, err := p.HttpClient.R().
-		SetContext(ctx).
-		SetFileReader("file", "file", bytes.NewReader(buf)).
-		SetFormData(map[string]string{
-			"options": `{"languages": ["eng"]}`, // Add the "options" field
-		}).
-		SetResult(&serverResp).
-		Post(p.TesseractEndpoint)
+func (p *OCRParser) doOCR(ctx context.Context, buf []byte) (*core.Vacancy, error) {
+	// call the OpenAI API to parse the vacancy information
+	vacInfo, err := resolver.CallOpenAI[resolver.VacancyInfo](ctx, p.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{
+		openai.SystemMessage("You will be given vacancy description from the image and you need to parse the information from it."),
+		openai.UserMessageParts(openai.ImagePart(fmt.Sprintf("data:image/png;base64,%s", base64.StdEncoding.EncodeToString(buf)))),
+	})
 	if err != nil {
-		return "", fmt.Errorf("failed to call the OCR server: %w", err)
+		return nil, fmt.Errorf("unable to parse the vacancy information: %w", err)
 	}
-	return serverResp.Data.Stdout, nil
+
+	return vacInfo.ToVacancy(), nil
 }

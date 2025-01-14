@@ -1,23 +1,9 @@
 services:
-  tesseract-server:
-    image: hertzg/tesseract-server:latest
-    healthcheck:
-      test: "wget --spider -S http://127.0.0.1:8884/.well-known/health/ready"
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 5s
-    # ports:
-    #   - "8884:8884"
   integration-test:
     build:
       context: ../../../
       dockerfile: ./build/package/integration_test/Dockerfile
-    depends_on:
-      tesseract-server:
-        condition: service_healthy
     environment:
-      - TEST_TESSERACT_ENDPOINT=http://tesseract-server:8884/tesseract
       - TEST_OPENAI_KEY=${IDN_REMOTE_ENTRY_OPENAI_KEY}
     entrypoint: "go test -timeout=1m30s ./..."
     volumes:

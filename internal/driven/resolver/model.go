@@ -1,8 +1,8 @@
 package resolver
 
-import "github.com/invopop/jsonschema"
+import "github.com/ghazlabs/idn-remote-entry/internal/core"
 
-type vacancyInfo struct {
+type VacancyInfo struct {
 	JobTitle         string   `json:"job_title" jsonschema_description:"Title of the job taken from the vacancy description, if not found then it should be empty"`
 	CompanyName      string   `json:"company_name" jsonschema_description:"Name of the company that posted the vacancy, if not found then it should be empty"`
 	CompanyLocation  string   `json:"company_location" jsonschema_description:"Location of the company HQ based on the vacancy description, if not found then it should be empty"`
@@ -10,14 +10,12 @@ type vacancyInfo struct {
 	RelevantTags     []string `json:"relevant_tags" jsonschema_description:"List of tags that are relevant to the vacancy maximum 5 written in lowercase, if not found then it should be empty"`
 }
 
-func generateSchema[T any]() interface{} {
-	// Structured Outputs uses a subset of JSON schema
-	// These flags are necessary to comply with the subset
-	reflector := jsonschema.Reflector{
-		AllowAdditionalProperties: false,
-		DoNotReference:            true,
+func (i VacancyInfo) ToVacancy() *core.Vacancy {
+	return &core.Vacancy{
+		JobTitle:         i.JobTitle,
+		CompanyName:      i.CompanyName,
+		CompanyLocation:  i.CompanyLocation,
+		ShortDescription: i.ShortDescription,
+		RelevantTags:     i.RelevantTags,
 	}
-	var v T
-	schema := reflector.Reflect(v)
-	return schema
 }
