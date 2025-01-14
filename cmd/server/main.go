@@ -18,11 +18,12 @@ import (
 )
 
 const (
-	envKeyNotionDatabaseID = "NOTION_DATABASE_ID"
-	envKeyNotionToken      = "NOTION_TOKEN"
-	envKeyOpenAiKey        = "OPENAI_KEY"
-	envKeyListenPort       = "LISTEN_PORT"
-	envKeyClientApiKey     = "CLIENT_API_KEY"
+	envKeyNotionDatabaseID  = "NOTION_DATABASE_ID"
+	envKeyNotionToken       = "NOTION_TOKEN"
+	envKeyOpenAiKey         = "OPENAI_KEY"
+	envKeyListenPort        = "LISTEN_PORT"
+	envKeyClientApiKey      = "CLIENT_API_KEY"
+	envKeyTesseractEndpoint = "TESSERACT_ENDPOINT"
 )
 
 func main() {
@@ -45,7 +46,8 @@ func main() {
 		log.Fatalf("failed to initialize text parser: %v", err)
 	}
 	ocrParser, err := parser.NewOCRParser(parser.OCRParserConfig{
-		HttpClient: httpClient,
+		HttpClient:        httpClient,
+		TesseractEndpoint: env.GetString(envKeyTesseractEndpoint),
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize OCR parser: %v", err)

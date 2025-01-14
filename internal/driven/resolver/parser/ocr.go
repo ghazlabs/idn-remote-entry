@@ -16,7 +16,8 @@ type OCRParser struct {
 }
 
 type OCRParserConfig struct {
-	HttpClient *resty.Client `validate:"nonnil"`
+	HttpClient        *resty.Client `validate:"nonnil"`
+	TesseractEndpoint string        `validate:"nonzero"`
 }
 
 func NewOCRParser(cfg OCRParserConfig) (*OCRParser, error) {
@@ -81,7 +82,7 @@ func (p *OCRParser) doOCR(ctx context.Context, buf []byte) (string, error) {
 			"options": `{"languages": ["eng"]}`, // Add the "options" field
 		}).
 		SetResult(&serverResp).
-		Post("http://127.0.0.1:8884/tesseract")
+		Post(p.TesseractEndpoint)
 	if err != nil {
 		return "", fmt.Errorf("failed to call the OCR server: %w", err)
 	}

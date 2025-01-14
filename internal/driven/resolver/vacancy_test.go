@@ -9,8 +9,15 @@ import (
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver/parser"
 	"github.com/go-resty/resty/v2"
 	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
+	"github.com/riandyrn/go-env"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	envKeyTesseractEndpoint = "TEST_TESSERACT_ENDPOINT"
+	envKeyTestOpenAiKey     = "TEST_OPENAI_KEY"
 )
 
 func TestResolve(t *testing.T) {
@@ -21,12 +28,13 @@ func TestResolve(t *testing.T) {
 	require.NoError(t, err)
 
 	ocrParser, err := parser.NewOCRParser(parser.OCRParserConfig{
-		HttpClient: httpClient,
+		HttpClient:        httpClient,
+		TesseractEndpoint: env.GetString(envKeyTesseractEndpoint),
 	})
 	require.NoError(t, err)
 
 	vacResolver, err := resolver.NewVacancyResolver(resolver.VacancyResolverConfig{
-		OpenaAiClient: openai.NewClient(),
+		OpenaAiClient: openai.NewClient(option.WithAPIKey(env.GetString(envKeyTestOpenAiKey))),
 		ParserRegistries: []resolver.ParserRegistry{
 			{
 				ApexDomains: []string{"greenhouse.io"},

@@ -10,10 +10,6 @@ type vacancyInfo struct {
 	RelevantTags     []string `json:"relevant_tags" jsonschema_description:"List of tags that are relevant to the vacancy maximum 5 written in lowercase, if not found then it should be empty"`
 }
 
-type locationInfo struct {
-	Location string `json:"country" jsonschema_description:"Location where the company HQ is located, it should be in the format of City, Country, if not found then it should be empty"`
-}
-
 func generateSchema[T any]() interface{} {
 	// Structured Outputs uses a subset of JSON schema
 	// These flags are necessary to comply with the subset
