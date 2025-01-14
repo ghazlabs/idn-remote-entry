@@ -113,6 +113,7 @@ func TestResolve(t *testing.T) {
 			assert.NotEmpty(t, vac.ShortDescription)
 			assert.NotEmpty(t, vac.RelevantTags)
 			assert.NotEmpty(t, vac.ApplyURL)
+			assert.NotEmpty(t, vac.CompanyLocation)
 		})
 	}
 }
