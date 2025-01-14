@@ -3,7 +3,6 @@ package resolver
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -44,31 +43,18 @@ func (r *VacancyResolver) Resolve(ctx context.Context, url string) (*core.Vacanc
 		return nil, fmt.Errorf("failed to take the screenshot of the URL: %w", err)
 	}
 
+	textContent, err := r.doOCR(ctx, screenshot)
+	if err != nil {
+		return nil, fmt.Errorf("failed to do OCR: %w", err)
+	}
+
 	// call the OpenAI API to parse the vacancy information
 	vacInfo, err := callOpenAI[vacancyInfo](ctx, r.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{
-		openai.SystemMessage("You will be given vacancy description from the image and you need to parse the information from it."),
-		openai.UserMessageParts(openai.ImagePart(fmt.Sprintf("data:image/png;base64,%s", base64.StdEncoding.EncodeToString(screenshot)))),
+		openai.SystemMessage("I will give you unstructured text content of a remote vacancy, and you need to parse information from this text."),
+		openai.UserMessage(textContent),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse the vacancy information: %w", err)
-	}
-
-	if len(vacInfo.CompanyLocation) == 0 || strings.Contains(strings.ToLower(vacInfo.CompanyLocation), "remote") {
-		// lookup to duckduckgo to get the company HQ location, if it is not found in the previous step
-		textLocation, err := r.getTextContent(ctx, fmt.Sprintf("https://duckduckgo.com/html/?q=%s HQ Location", vacInfo.CompanyName))
-		if err != nil {
-			return nil, fmt.Errorf("failed to get reference of the company HQ location: %w", err)
-		}
-
-		// call the OpenAI API to get the company HQ location
-		locInfo, err := callOpenAI[locationInfo](ctx, r.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{
-			openai.SystemMessage("You will be given a text content for a company location and you need to parse the location information from it."),
-			openai.UserMessage(textLocation),
-		})
-		if err != nil {
-			return nil, fmt.Errorf("unable to parse the location information: %w", err)
-		}
-		vacInfo.CompanyLocation = locInfo.Location
 	}
 
 	vac := &core.Vacancy{
@@ -102,6 +88,29 @@ func (r *VacancyResolver) takeScreenshot(ctx context.Context, url string) ([]byt
 	}
 
 	return buf, nil
+}
+
+type tesseractServerResponse struct {
+	Data struct {
+		Stdout string `json:"stdout"`
+	} `json:"data"`
+}
+
+func (r *VacancyResolver) doOCR(ctx context.Context, buf []byte) (string, error) {
+	// call tesseract server to do OCR
+	var serverResp tesseractServerResponse
+	_, err := r.HttpClient.R().
+		SetContext(ctx).
+		SetFileReader("file", "file", bytes.NewReader(buf)).
+		SetFormData(map[string]string{
+			"options": `{"languages": ["eng"]}`, // Add the "options" field
+		}).
+		SetResult(&serverResp).
+		Post("http://127.0.0.1:8884/tesseract")
+	if err != nil {
+		return "", fmt.Errorf("failed to call the OCR server: %w", err)
+	}
+	return serverResp.Data.Stdout, nil
 }
 
 func (r *VacancyResolver) getTextContent(ctx context.Context, url string) (string, error) {

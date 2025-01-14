@@ -1,5 +1,8 @@
 .PHONY: *
 
+test:
+	go test -v -timeout=1m30s ./...
+
 run:
 	-docker compose -f ./deploy/local/run/docker-compose.yml down --remove-orphans
 	docker compose -f ./deploy/local/run/docker-compose.yml up --build
