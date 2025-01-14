@@ -94,6 +94,12 @@ func TestResolve(t *testing.T) {
 			ExpVacancyName: "Lead iOS Engineer (Indonesia Remote)",
 			ExpCompanyName: "Goodnotes",
 		},
+		{
+			Name:           "Influx URL",
+			VacancyURL:     "https://influx.com/careers/jobs/3-customer-service-representative",
+			ExpVacancyName: "Customer Service Representative",
+			ExpCompanyName: "Influx",
+		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
