@@ -8,6 +8,7 @@ import (
 
 	"github.com/ghazlabs/idn-remote-entry/internal/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver"
+	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver/parser"
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/storage"
 	"github.com/ghazlabs/idn-remote-entry/internal/driver"
 	"github.com/go-resty/resty/v2"
@@ -36,10 +37,30 @@ func main() {
 		log.Fatalf("failed to initialize storage: %v", err)
 	}
 
+	// initialize parser
+	textParser, err := parser.NewTextParser(parser.TextParserConfig{
+		HttpClient: httpClient,
+	})
+	if err != nil {
+		log.Fatalf("failed to initialize text parser: %v", err)
+	}
+	ocrParser, err := parser.NewOCRParser(parser.OCRParserConfig{
+		HttpClient: httpClient,
+	})
+	if err != nil {
+		log.Fatalf("failed to initialize OCR parser: %v", err)
+	}
+
 	// initialize resolver
 	rslvr, err := resolver.NewVacancyResolver(resolver.VacancyResolverConfig{
-		HttpClient:    httpClient,
 		OpenaAiClient: openai.NewClient(option.WithAPIKey(env.GetString(envKeyOpenAiKey))),
+		DefaultParser: ocrParser,
+		ParserRegistries: []resolver.ParserRegistry{
+			{
+				ApexDomains: []string{"greenhouse.io"},
+				Parser:      textParser,
+			},
+		},
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize resolver: %v", err)
