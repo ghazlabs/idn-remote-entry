@@ -72,7 +72,7 @@ func (p *OCRParser) takeScreenshot(ctx context.Context, url string) ([]byte, err
 func (p *OCRParser) doOCR(ctx context.Context, buf []byte, url string) (*core.Vacancy, error) {
 	// call the OpenAI API to parse the vacancy information
 	vacInfo, err := resolver.CallOpenAI[resolver.VacancyInfo](ctx, p.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{
-		openai.SystemMessage("You will be given vacancy description from the image and you need to parse the information from it. Also please provide the company HQ location based on what you know."),
+		openai.SystemMessage("You will be given vacancy description from the image and you need to parse the information from it."),
 		openai.UserMessageParts(openai.ImagePart(fmt.Sprintf("data:image/png;base64,%s", base64.StdEncoding.EncodeToString(buf)))),
 	})
 	if err != nil {

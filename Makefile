@@ -5,8 +5,11 @@ test:
 	docker compose -f ./deploy/local/integration_test/docker-compose.yml up --build --exit-code-from=integration-test
 
 run:
-	-docker compose -f ./deploy/local/run/docker-compose.yml down --remove-orphans
+	-make stop
 	docker compose -f ./deploy/local/run/docker-compose.yml up --build
+
+stop:
+	docker compose -f ./deploy/local/run/docker-compose.yml down --remove-orphans
 
 ## command for Batha server which run old AMI Linux version. In there there is no "docker compose".
 deploy-ec2:

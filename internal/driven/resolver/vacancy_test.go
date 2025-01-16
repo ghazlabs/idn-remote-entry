@@ -21,6 +21,10 @@ const (
 )
 
 func TestResolve(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	httpClient := resty.New()
 	openAiClient := openai.NewClient(option.WithAPIKey(env.GetString(envKeyTestOpenAiKey)))
 	textParser, err := parser.NewGreenhouseParser(parser.GreenhouseParserConfig{

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/core"
+	"github.com/ghazlabs/idn-remote-entry/internal/driven/notifier"
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver"
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver/parser"
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/storage"
@@ -18,11 +19,14 @@ import (
 )
 
 const (
-	envKeyNotionDatabaseID = "NOTION_DATABASE_ID"
-	envKeyNotionToken      = "NOTION_TOKEN"
-	envKeyOpenAiKey        = "OPENAI_KEY"
-	envKeyListenPort       = "LISTEN_PORT"
-	envKeyClientApiKey     = "CLIENT_API_KEY"
+	envKeyNotionDatabaseID     = "NOTION_DATABASE_ID"
+	envKeyNotionToken          = "NOTION_TOKEN"
+	envKeyOpenAiKey            = "OPENAI_KEY"
+	envKeyListenPort           = "LISTEN_PORT"
+	envKeyClientApiKey         = "CLIENT_API_KEY"
+	envKeyWhatsappApiUser      = "WHATSAPP_API_USER"
+	envKeyWhatsappApiPass      = "WHATSAPP_API_PASS"
+	envKeyWhatsappRecipientIDs = "WHATSAPP_RECIPIENT_IDS"
 )
 
 func main() {
@@ -68,10 +72,22 @@ func main() {
 		log.Fatalf("failed to initialize resolver: %v", err)
 	}
 
+	// initialize notifier
+	notf, err := notifier.NewWhatsappNotifier(notifier.WhatsappNotifierConfig{
+		HttpClient:           httpClient,
+		Username:             env.GetString(envKeyWhatsappApiUser),
+		Password:             env.GetString(envKeyWhatsappApiPass),
+		WhatsappRecipientIDs: env.GetStrings(envKeyWhatsappRecipientIDs, ","),
+	})
+	if err != nil {
+		log.Fatalf("failed to initialize notifier: %v", err)
+	}
+
 	// initialize service
 	svc, err := core.NewService(core.ServiceConfig{
 		Storage:         strg,
 		VacancyResolver: rslvr,
+		Notifier:        notf,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize service: %v", err)

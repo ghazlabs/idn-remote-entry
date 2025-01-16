@@ -25,3 +25,9 @@ type Vacancy struct {
 	RelevantTags     []string `json:"relevant_tags"`
 	ApplyURL         string   `json:"apply_url"`
 }
+
+type VacancyRecord struct {
+	ID string `json:"id"`
+	Vacancy
+	PublicURL string `json:"public_url"`
+}
