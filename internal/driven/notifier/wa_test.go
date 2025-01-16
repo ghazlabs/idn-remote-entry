@@ -12,17 +12,17 @@ import (
 )
 
 const (
-	envKeyWhatsappApiUser     = "TEST_WHATSAPP_API_USER"
-	envKeyWhatsappApiPass     = "TEST_WHATSAPP_API_PASS"
-	envKeyWhatsappRecipientID = "TEST_WHATSAPP_RECIPIENT_ID"
+	envKeyWhatsappApiUser      = "TEST_WHATSAPP_API_USER"
+	envKeyWhatsappApiPass      = "TEST_WHATSAPP_API_PASS"
+	envKeyWhatsappRecipientIDs = "TEST_WHATSAPP_RECIPIENT_IDS"
 )
 
 func TestNotify(t *testing.T) {
 	n, err := notifier.NewWhatsappNotifier(notifier.WhatsappNotifierConfig{
-		HttpClient:          resty.New(),
-		Username:            env.GetString(envKeyWhatsappApiUser),
-		Password:            env.GetString(envKeyWhatsappApiPass),
-		WhatsappRecipientID: env.GetString(envKeyWhatsappRecipientID),
+		HttpClient:           resty.New(),
+		Username:             env.GetString(envKeyWhatsappApiUser),
+		Password:             env.GetString(envKeyWhatsappApiPass),
+		WhatsappRecipientIDs: env.GetStrings(envKeyWhatsappRecipientIDs, ","),
 	})
 	require.NoError(t, err)
 
