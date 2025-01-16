@@ -92,3 +92,8 @@ func NewInsertRecordPaylod(databaseID string, now time.Time, v core.Vacancy) Ins
 
 	return p
 }
+
+type insertRecordResponse struct {
+	ID        string `json:"id"`
+	PublicURL string `json:"public_url"`
+}

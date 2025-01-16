@@ -14,6 +14,7 @@ type Service interface {
 type ServiceConfig struct {
 	Storage         Storage         `validate:"nonnil"`
 	VacancyResolver VacancyResolver `validate:"nonnil"`
+	Notifier        Notifier        `validate:"nonnil"`
 }
 
 func NewService(cfg ServiceConfig) (Service, error) {
@@ -42,23 +43,28 @@ func (s *service) Handle(ctx context.Context, req SubmitRequest) error {
 	// handle request
 	switch req.SubmissionType {
 	case SubmitTypeManual:
-		err = s.Storage.Save(ctx, req.Vacancy)
-		if err != nil {
-			return NewInternalError(err)
-		}
 	case SubmitTypeURL:
 		// resolve apply url to get vacancy details
-		vacancy, err := s.VacancyResolver.Resolve(ctx, req.Vacancy.ApplyURL)
+		v, err := s.VacancyResolver.Resolve(ctx, req.Vacancy.ApplyURL)
 		if err != nil {
 			// the error will be determined by resolver implementation
 			return err
 		}
 
-		// then save the job details
-		err = s.Storage.Save(ctx, *vacancy)
-		if err != nil {
-			return NewInternalError(err)
-		}
+		// update vacancy with resolved details
+		req.Vacancy = *v
+	}
+
+	// save vacancy
+	rec, err := s.Storage.Save(ctx, req.Vacancy)
+	if err != nil {
+		return NewInternalError(fmt.Errorf("failed to save vacancy: %w", err))
+	}
+
+	// notify to whatsapp
+	err = s.Notifier.Notify(ctx, *rec)
+	if err != nil {
+		return NewInternalError(fmt.Errorf("failed to notify to whatsapp: %w", err))
 	}
 
 	return nil

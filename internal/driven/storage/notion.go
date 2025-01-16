@@ -30,20 +30,27 @@ func NewNotionStorage(cfg NotionStorageConfig) (*NotionStorage, error) {
 	}, nil
 }
 
-func (s *NotionStorage) Save(ctx context.Context, v core.Vacancy) error {
+func (s *NotionStorage) Save(ctx context.Context, v core.Vacancy) (*core.VacancyRecord, error) {
+	var respBody insertRecordResponse
 	payload := NewInsertRecordPaylod(s.DatabaseID, time.Now(), v)
 	resp, err := s.HttpClient.R().
 		SetHeader("Authorization", "Bearer "+s.NotionToken).
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Notion-Version", "2022-06-28").
 		SetBody(payload).
+		SetResult(&respBody).
 		Post("https://api.notion.com/v1/pages")
 	if err != nil {
-		return fmt.Errorf("failed to call api to save the vacancy: %w", err)
+		return nil, fmt.Errorf("failed to call api to save the vacancy: %w", err)
 	}
 	if resp.IsError() {
-		return fmt.Errorf("failed to save the vacancy: %s", resp.String())
+		return nil, fmt.Errorf("failed to save the vacancy: %s", resp.String())
 	}
 
-	return nil
+	rec := &core.VacancyRecord{
+		ID:        respBody.ID,
+		Vacancy:   v,
+		PublicURL: respBody.PublicURL,
+	}
+	return rec, nil
 }
