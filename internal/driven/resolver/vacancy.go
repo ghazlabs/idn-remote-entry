@@ -17,6 +17,10 @@ type Parser interface {
 	Parse(ctx context.Context, url string) (*core.Vacancy, error)
 }
 
+type HQLocator interface {
+	Locate(ctx context.Context, companyName string) (string, error)
+}
+
 type ParserRegistry struct {
 	ApexDomains []string
 	Parser      Parser
@@ -25,6 +29,7 @@ type ParserRegistry struct {
 type VacancyResolverConfig struct {
 	DefaultParser    Parser `validate:"nonnil"`
 	ParserRegistries []ParserRegistry
+	HQLocator        HQLocator
 }
 
 func NewVacancyResolver(cfg VacancyResolverConfig) (*VacancyResolver, error) {
@@ -43,9 +48,20 @@ func (r *VacancyResolver) Resolve(ctx context.Context, url string) (*core.Vacanc
 	for _, reg := range r.ParserRegistries {
 		for _, apex := range reg.ApexDomains {
 			if strings.Contains(url, apex) {
+				// parse the vacancy from URL
 				vac, err = reg.Parser.Parse(ctx, url)
 				if err != nil {
 					return nil, fmt.Errorf("failed to parse the vacancy: %w", err)
+				}
+
+				// if the company location is not found (which indicated by "Global Remoe")
+				// locate the company's headquarters
+				if strings.Contains(strings.ToLower(vac.CompanyLocation), "remote") {
+					hqLoc, err := r.HQLocator.Locate(ctx, vac.CompanyName)
+					if err != nil {
+						return nil, fmt.Errorf("failed to locate the company's headquarters: %w", err)
+					}
+					vac.CompanyLocation = hqLoc
 				}
 
 				goto parserFound
