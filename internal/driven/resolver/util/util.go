@@ -1,11 +1,13 @@
-package resolver
+package util
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
+	"github.com/chromedp/chromedp"
 	"github.com/invopop/jsonschema"
 	"github.com/openai/openai-go"
 )
@@ -58,4 +60,25 @@ func CallOpenAI[T any](
 	}
 
 	return &info, nil
+}
+
+func TakeScreenshot(ctx context.Context, url string) ([]byte, error) {
+	// create context for chrome
+	ctx, cancel := chromedp.NewContext(ctx)
+	defer cancel()
+
+	// allocate a buffer to store the screenshot
+	var buf []byte
+
+	// capture the screenshot
+	err := chromedp.Run(ctx,
+		chromedp.Navigate(url),
+		chromedp.Sleep(3*time.Second),
+		chromedp.FullScreenshot(&buf, 90),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to take the screenshot: %w", err)
+	}
+
+	return buf, nil
 }

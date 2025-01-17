@@ -51,7 +51,6 @@ func main() {
 		log.Fatalf("failed to initialize text parser: %v", err)
 	}
 	ocrParser, err := parser.NewOCRParser(parser.OCRParserConfig{
-		HttpClient:    httpClient,
 		OpenaAiClient: openAiClient,
 	})
 	if err != nil {

@@ -6,23 +6,18 @@ import (
 
 	"github.com/ghazlabs/idn-remote-entry/internal/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/notifier"
+	"github.com/ghazlabs/idn-remote-entry/internal/testutil"
 	"github.com/go-resty/resty/v2"
 	"github.com/riandyrn/go-env"
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	envKeyWhatsappApiUser      = "TEST_WHATSAPP_API_USER"
-	envKeyWhatsappApiPass      = "TEST_WHATSAPP_API_PASS"
-	envKeyWhatsappRecipientIDs = "TEST_WHATSAPP_RECIPIENT_IDS"
-)
-
 func TestNotify(t *testing.T) {
 	n, err := notifier.NewWhatsappNotifier(notifier.WhatsappNotifierConfig{
 		HttpClient:           resty.New(),
-		Username:             env.GetString(envKeyWhatsappApiUser),
-		Password:             env.GetString(envKeyWhatsappApiPass),
-		WhatsappRecipientIDs: env.GetStrings(envKeyWhatsappRecipientIDs, ","),
+		Username:             env.GetString(testutil.EnvKeyWhatsappApiUser),
+		Password:             env.GetString(testutil.EnvKeyWhatsappApiPass),
+		WhatsappRecipientIDs: env.GetStrings(testutil.EnvKeyWhatsappRecipientIDs, ","),
 	})
 	require.NoError(t, err)
 

@@ -54,14 +54,14 @@ func (r *VacancyResolver) Resolve(ctx context.Context, url string) (*core.Vacanc
 					return nil, fmt.Errorf("failed to parse the vacancy: %w", err)
 				}
 
-				// if the company location is not found (which indicated by "Global Remoe")
+				// if the company location is not found (which indicated by "Global Remote")
 				// locate the company's headquarters
 				if strings.Contains(strings.ToLower(vac.CompanyLocation), "remote") {
-					hqLoc, err := r.HQLocator.Locate(ctx, vac.CompanyName)
-					if err != nil {
-						return nil, fmt.Errorf("failed to locate the company's headquarters: %w", err)
+					hqLoc, _ := r.HQLocator.Locate(ctx, vac.CompanyName)
+					if len(hqLoc) > 0 {
+						// update if the company location is found
+						vac.CompanyLocation = hqLoc
 					}
-					vac.CompanyLocation = hqLoc
 				}
 
 				goto parserFound
