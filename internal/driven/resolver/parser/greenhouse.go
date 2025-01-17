@@ -9,6 +9,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/ghazlabs/idn-remote-entry/internal/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver"
+	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver/util"
 	"github.com/go-resty/resty/v2"
 	"github.com/openai/openai-go"
 	"gopkg.in/validator.v2"
@@ -39,7 +40,7 @@ func (p *GreenhouseParser) Parse(ctx context.Context, url string) (*core.Vacancy
 	}
 
 	// call the OpenAI API to parse the vacancy information
-	vacInfo, err := resolver.CallOpenAI[resolver.VacancyInfo](ctx, p.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{
+	vacInfo, err := util.CallOpenAI[resolver.VacancyInfo](ctx, p.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{
 		openai.SystemMessage("I will give you unstructured text content of a remote vacancy, and you need to parse information from this text. Also please provide the company HQ location based on what you know."),
 		openai.UserMessage(text),
 	})

@@ -9,6 +9,7 @@ import (
 	"github.com/ghazlabs/idn-remote-entry/internal/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/notifier"
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver"
+	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver/hqloc"
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver/parser"
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/storage"
 	"github.com/ghazlabs/idn-remote-entry/internal/driver"
@@ -51,11 +52,21 @@ func main() {
 		log.Fatalf("failed to initialize text parser: %v", err)
 	}
 	ocrParser, err := parser.NewOCRParser(parser.OCRParserConfig{
-		HttpClient:    httpClient,
 		OpenaAiClient: openAiClient,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize OCR parser: %v", err)
+	}
+
+	// initialize locator
+	locator, err := hqloc.NewLocator(hqloc.LocatorConfig{
+		HttpClient:    httpClient,
+		OpenaAiClient: openAiClient,
+		DatabaseID:    env.GetString(envKeyNotionDatabaseID),
+		NotionToken:   env.GetString(envKeyNotionToken),
+	})
+	if err != nil {
+		log.Fatalf("failed to initialize locator: %v", err)
 	}
 
 	// initialize resolver
@@ -67,6 +78,7 @@ func main() {
 				Parser:      textParser,
 			},
 		},
+		HQLocator: locator,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize resolver: %v", err)

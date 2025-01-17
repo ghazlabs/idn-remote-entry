@@ -8,6 +8,8 @@ services:
       - TEST_WHATSAPP_API_USER=${GHAZLABS_WA_SERVER_USER}
       - TEST_WHATSAPP_API_PASS=${GHAZLABS_WA_SERVER_PASS}
       - TEST_WHATSAPP_RECIPIENT_IDS=120363390036841640@newsletter,120363376193442839@g.us
-    entrypoint: "go test -timeout=1m30s -short ./..."
+      - TEST_NOTION_DATABASE_ID=${IDN_REMOTE_ENTRY_NOTION_DATABASE_ID_DEV} # this is dev table
+      - TEST_NOTION_TOKEN=${IDN_REMOTE_ENTRY_NOTION_TOKEN}
+    entrypoint: "go test -timeout=3m -short ./..."
     volumes:
       - ../../../internal:/go/src/github.com/ghazlabs/idn-remote-entry/internal
