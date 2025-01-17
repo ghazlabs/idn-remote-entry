@@ -29,7 +29,7 @@ type ParserRegistry struct {
 type VacancyResolverConfig struct {
 	DefaultParser    Parser `validate:"nonnil"`
 	ParserRegistries []ParserRegistry
-	HQLocator        HQLocator
+	HQLocator        HQLocator `validate:"nonnil"`
 }
 
 func NewVacancyResolver(cfg VacancyResolverConfig) (*VacancyResolver, error) {
@@ -54,16 +54,6 @@ func (r *VacancyResolver) Resolve(ctx context.Context, url string) (*core.Vacanc
 					return nil, fmt.Errorf("failed to parse the vacancy: %w", err)
 				}
 
-				// if the company location is not found (which indicated by "Global Remote")
-				// locate the company's headquarters
-				if strings.Contains(strings.ToLower(vac.CompanyLocation), "remote") {
-					hqLoc, _ := r.HQLocator.Locate(ctx, vac.CompanyName)
-					if len(hqLoc) > 0 {
-						// update if the company location is found
-						vac.CompanyLocation = hqLoc
-					}
-				}
-
 				goto parserFound
 			}
 		}
@@ -76,5 +66,15 @@ func (r *VacancyResolver) Resolve(ctx context.Context, url string) (*core.Vacanc
 	}
 
 parserFound:
+	// if the company location is not found (which indicated by "Global Remote")
+	// locate the company's headquarters
+	if strings.Contains(strings.ToLower(vac.CompanyLocation), "remote") {
+		hqLoc, _ := r.HQLocator.Locate(ctx, vac.CompanyName)
+		if len(hqLoc) > 0 {
+			// update if the company location is found
+			vac.CompanyLocation = hqLoc
+		}
+	}
+
 	return vac, nil
 }

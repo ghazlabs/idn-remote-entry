@@ -62,5 +62,5 @@ func (l *Locator) doOCR(ctx context.Context, buf []byte) (string, error) {
 }
 
 type companyLocation struct {
-	Location string `json:"location" jsonschema_description:"The company HQ location, it should in the format of 'City, Country' for example 'Riyadh, Saudi Arabia'"`
+	Location string `json:"location" jsonschema_description:"The company HQ location, the format must in the form of 'City, Country' for example 'Riyadh, Saudi Arabia'. If the location is not found just return empty string."`
 }

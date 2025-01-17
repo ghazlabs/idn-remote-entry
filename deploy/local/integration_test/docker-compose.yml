@@ -8,6 +8,6 @@ services:
       - TEST_WHATSAPP_API_USER=${GHAZLABS_WA_SERVER_USER}
       - TEST_WHATSAPP_API_PASS=${GHAZLABS_WA_SERVER_PASS}
       - TEST_WHATSAPP_RECIPIENT_IDS=120363390036841640@newsletter,120363376193442839@g.us
-    entrypoint: "go test -timeout=1m30s -short ./..."
+    entrypoint: "go test -timeout=3m -short ./..."
     volumes:
       - ../../../internal:/go/src/github.com/ghazlabs/idn-remote-entry/internal

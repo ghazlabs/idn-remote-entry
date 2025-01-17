@@ -35,8 +35,8 @@ func TestLocate(t *testing.T) {
 			ExpCompanyLocation: "Riyadh, Saudi Arabia",
 		},
 		{
-			CompanyName:        "Tokopedia",
-			ExpCompanyLocation: "Jakarta, Indonesia",
+			CompanyName:        "Fingerprint",
+			ExpCompanyLocation: "Chicago, United States",
 		},
 	}
 	for _, testCase := range testCases {

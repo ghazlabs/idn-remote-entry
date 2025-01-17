@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver"
+	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver/hqloc"
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver/parser"
 	"github.com/ghazlabs/idn-remote-entry/internal/testutil"
 	"github.com/go-resty/resty/v2"
@@ -34,6 +35,11 @@ func TestResolve(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	locator, err := hqloc.NewLocator(hqloc.LocatorConfig{
+		OpenaAiClient: openai.NewClient(option.WithAPIKey(env.GetString(testutil.EnvKeyTestOpenAiKey))),
+	})
+	require.NoError(t, err)
+
 	vacResolver, err := resolver.NewVacancyResolver(resolver.VacancyResolverConfig{
 		ParserRegistries: []resolver.ParserRegistry{
 			{
@@ -42,6 +48,7 @@ func TestResolve(t *testing.T) {
 			},
 		},
 		DefaultParser: ocrParser,
+		HQLocator:     locator,
 	})
 	require.NoError(t, err)
 
@@ -98,6 +105,12 @@ func TestResolve(t *testing.T) {
 			VacancyURL:     "https://influx.com/careers/jobs/3-customer-service-representative",
 			ExpVacancyName: "Customer Service Representative",
 			ExpCompanyName: "Influx",
+		},
+		{
+			Name:           "Fingerprint URL",
+			VacancyURL:     "https://fingerprint.com/careers/jobs/apply/?gh_jid=5377202004",
+			ExpVacancyName: "Sr. Android Engineer",
+			ExpCompanyName: "Fingerprint",
 		},
 	}
 	for _, testCase := range testCases {

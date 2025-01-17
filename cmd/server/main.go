@@ -9,6 +9,7 @@ import (
 	"github.com/ghazlabs/idn-remote-entry/internal/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/notifier"
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver"
+	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver/hqloc"
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver/parser"
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/storage"
 	"github.com/ghazlabs/idn-remote-entry/internal/driver"
@@ -57,6 +58,14 @@ func main() {
 		log.Fatalf("failed to initialize OCR parser: %v", err)
 	}
 
+	// initialize locator
+	locator, err := hqloc.NewLocator(hqloc.LocatorConfig{
+		OpenaAiClient: openAiClient,
+	})
+	if err != nil {
+		log.Fatalf("failed to initialize locator: %v", err)
+	}
+
 	// initialize resolver
 	rslvr, err := resolver.NewVacancyResolver(resolver.VacancyResolverConfig{
 		DefaultParser: ocrParser,
@@ -66,6 +75,7 @@ func main() {
 				Parser:      textParser,
 			},
 		},
+		HQLocator: locator,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize resolver: %v", err)
