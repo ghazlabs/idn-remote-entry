@@ -7,6 +7,7 @@ import (
 	"net/url"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver/util"
+	"github.com/go-resty/resty/v2"
 	"github.com/openai/openai-go"
 	"gopkg.in/validator.v2"
 )
@@ -25,10 +26,59 @@ func NewLocator(cfg LocatorConfig) (*Locator, error) {
 }
 
 type LocatorConfig struct {
+	HttpClient    *resty.Client  `validate:"nonnil"`
+	DatabaseID    string         `validate:"nonzero"`
+	NotionToken   string         `validate:"nonzero"`
 	OpenaAiClient *openai.Client `validate:"nonnil"`
 }
 
 func (l *Locator) Locate(ctx context.Context, companyName string) (string, error) {
+	companyLoc, err := l.lookupToNotion(ctx, companyName)
+	if err != nil {
+		return "", fmt.Errorf("failed to lookup company location from Notion: %w", err)
+	}
+	if companyLoc != "" {
+		return companyLoc, nil
+	}
+
+	return l.lookupToWeb(ctx, companyName)
+}
+
+func (l *Locator) lookupToNotion(ctx context.Context, companyName string) (string, error) {
+	var respBody NotionResponse
+	resp, err := l.HttpClient.R().
+		SetContext(ctx).
+		SetHeader("Authorization", "Bearer "+l.NotionToken).
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Notion-Version", "2022-06-28").
+		SetBody(map[string]interface{}{
+			"filter": map[string]interface{}{
+				"property": "Company Name",
+				"rich_text": map[string]string{
+					"equals": companyName,
+				},
+			},
+			"sorts": []map[string]string{
+				{
+					"property":  "Last edited time",
+					"direction": "descending",
+				},
+			},
+			"page_size": 1,
+		}).
+		SetResult(&respBody).
+		Post(fmt.Sprintf("https://api.notion.com/v1/databases/%s/query", l.DatabaseID))
+	if err != nil {
+		return "", fmt.Errorf("failed to call notion api to lookup company location: %w", err)
+	}
+	if resp.IsError() {
+		return "", fmt.Errorf("failed to lookup company location from Notion: %s", resp.String())
+	}
+
+	return respBody.GetCompanyLocation(), nil
+}
+
+func (l *Locator) lookupToWeb(ctx context.Context, companyName string) (string, error) {
 	queryParams := url.Values{}
 	queryParams.Add("q", fmt.Sprintf("Where is %s hq located?", companyName))
 	queryParams.Add("t", "h_")
