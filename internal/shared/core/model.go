@@ -1,22 +1,5 @@
 package core
 
-type SubmitType string
-
-const (
-	SubmitTypeManual SubmitType = "manual"
-	SubmitTypeURL    SubmitType = "url"
-)
-
-type SubmitRequest struct {
-	SubmissionType SubmitType `json:"submission_type"`
-	Vacancy
-}
-
-func (r SubmitRequest) Validate() error {
-	// TODO
-	return nil
-}
-
 type Vacancy struct {
 	JobTitle         string   `json:"job_title"`
 	CompanyName      string   `json:"company_name"`
@@ -27,7 +10,12 @@ type Vacancy struct {
 }
 
 type VacancyRecord struct {
-	ID string `json:"id"`
-	Vacancy
+	ID        string `json:"id"`
 	PublicURL string `json:"public_url"`
+	Vacancy
+}
+
+type WhatsappNotification struct {
+	RecipientID string `json:"recipient_id"`
+	VacancyRecord
 }

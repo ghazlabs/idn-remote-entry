@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ghazlabs/idn-remote-entry/internal/core"
+	"github.com/ghazlabs/idn-remote-entry/internal/server/core"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"

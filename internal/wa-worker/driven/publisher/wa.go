@@ -1,58 +1,47 @@
-package notifier
+package publisher
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	"github.com/ghazlabs/idn-remote-entry/internal/core"
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"github.com/go-resty/resty/v2"
 	"gopkg.in/validator.v2"
 )
 
-type WhatsappNotifier struct {
-	WhatsappNotifierConfig
+type WaPublisher struct {
+	WaPublisherConfig
 }
 
-func NewWhatsappNotifier(cfg WhatsappNotifierConfig) (*WhatsappNotifier, error) {
+func NewWaPublisher(cfg WaPublisherConfig) (*WaPublisher, error) {
 	// validate config
 	err := validator.Validate(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
-	return &WhatsappNotifier{
-		WhatsappNotifierConfig: cfg,
+	return &WaPublisher{
+		WaPublisherConfig: cfg,
 	}, nil
 }
 
-type WhatsappNotifierConfig struct {
-	HttpClient           *resty.Client `validate:"nonnil"`
-	Username             string        `validate:"nonzero"`
-	Password             string        `validate:"nonzero"`
-	WhatsappRecipientIDs []string      `validate:"nonzero"`
+type WaPublisherConfig struct {
+	HttpClient   *resty.Client `validate:"nonnil"`
+	Username     string        `validate:"nonzero"`
+	Password     string        `validate:"nonzero"`
+	WaApiBaseUrl string        `validate:"nonzero"`
 }
 
-func (n *WhatsappNotifier) Notify(ctx context.Context, v core.VacancyRecord) error {
-	for _, waID := range n.WhatsappRecipientIDs {
-		err := n.notifyRecipient(ctx, v, waID)
-		if err != nil {
-			return fmt.Errorf("failed to notify recipient: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (n *WhatsappNotifier) notifyRecipient(ctx context.Context, v core.VacancyRecord, waID string) error {
+func (n *WaPublisher) Publish(ctx context.Context, ntf core.WhatsappNotification) error {
 	// send notification to whatsapp using Ghazlabs Whatsapp API
 	resp, err := n.HttpClient.R().
 		SetContext(ctx).
 		SetBasicAuth(n.Username, n.Password).
 		SetBody(map[string]interface{}{
-			"phone":   waID,
-			"message": convertVacancyToMessage(v),
+			"phone":   ntf.RecipientID,
+			"message": convertVacancyToMessage(ntf.VacancyRecord),
 		}).
-		Post("https://wa.ghazlabs.com/send/message")
+		Post(fmt.Sprintf("%v/send/message", n.WaApiBaseUrl))
 	if err != nil {
 		return fmt.Errorf("unable to make http request: %w", err)
 	}
@@ -73,8 +62,6 @@ func convertVacancyToMessage(v core.VacancyRecord) string {
 		"",
 		fmt.Sprintf("🏢 %v", v.CompanyName),
 		fmt.Sprintf("📍 %v", v.CompanyLocation),
-		// "",
-		// v.ShortDescription,
 		"",
 		fmt.Sprintf("%v", v.PublicURL),
 		"",

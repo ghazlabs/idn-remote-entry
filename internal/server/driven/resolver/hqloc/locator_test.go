@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ghazlabs/idn-remote-entry/internal/driven/resolver/hqloc"
+	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/resolver/hqloc"
 	"github.com/ghazlabs/idn-remote-entry/internal/testutil"
 	"github.com/go-resty/resty/v2"
 	"github.com/openai/openai-go"
