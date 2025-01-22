@@ -14,13 +14,11 @@ import (
 type Consumer struct {
 	rmqConsumer *rabbitmq.Consumer
 	queueName   string
-	handler     func(rabbitmq.Delivery) rabbitmq.Action
 }
 
 type ConsumerConfig struct {
-	QueueName          string                                  `validate:"nonzero"`
-	RabbitMQConnString string                                  `validate:"nonzero"`
-	Handler            func(rabbitmq.Delivery) rabbitmq.Action `validate:"nonnil"`
+	QueueName          string `validate:"nonzero"`
+	RabbitMQConnString string `validate:"nonzero"`
 }
 
 func NewConsumer(cfg ConsumerConfig) (*Consumer, error) {
@@ -55,12 +53,11 @@ func NewConsumer(cfg ConsumerConfig) (*Consumer, error) {
 	return &Consumer{
 		rmqConsumer: rmqConsumer,
 		queueName:   cfg.QueueName,
-		handler:     cfg.Handler,
 	}, nil
 }
 
 // Run starts the consumer and block until it's done.
-func (c *Consumer) Run() error {
+func (c *Consumer) Run(h func(rabbitmq.Delivery) rabbitmq.Action) error {
 	// define channel to receive shutdown signal
 	shutdownCh := make(chan os.Signal, 1)
 	signal.Notify(shutdownCh, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
@@ -73,7 +70,7 @@ func (c *Consumer) Run() error {
 	}()
 
 	// start consuming messages
-	err := c.rmqConsumer.Run(c.handler)
+	err := c.rmqConsumer.Run(h)
 	if err != nil {
 		return fmt.Errorf("failed to start consuming messages: %w", err)
 	}

@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmq"
 	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/driven/publisher"
 	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/driver/worker"
@@ -38,11 +39,20 @@ func main() {
 		log.Fatalf("failed to initialize service: %v", err)
 	}
 
-	// initialize worker
-	w, err := worker.New(worker.Config{
-		Service:            svc,
+	// initialize consumer
+	rmqConsumer, err := rmq.NewConsumer(rmq.ConsumerConfig{
 		QueueName:          env.GetString(envKeyRabbitMQWaQueueName),
 		RabbitMQConnString: env.GetString(envKeyRabbitMQConn),
+	})
+	if err != nil {
+		log.Fatalf("failed to initialize consumer: %v", err)
+	}
+	defer rmqConsumer.Close()
+
+	// initialize worker
+	w, err := worker.New(worker.Config{
+		Service:     svc,
+		RmqConsumer: rmqConsumer,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize worker: %v", err)

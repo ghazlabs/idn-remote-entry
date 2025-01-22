@@ -15,14 +15,12 @@ import (
 )
 
 type Worker struct {
-	svc      core.Service
-	consumer *rmq.Consumer
+	Config
 }
 
 type Config struct {
-	Service            core.Service `validate:"nonnil"`
-	QueueName          string       `validate:"nonzero"`
-	RabbitMQConnString string       `validate:"nonzero"`
+	Service     core.Service  `validate:"nonnil"`
+	RmqConsumer *rmq.Consumer `validate:"nonnil"`
 }
 
 func New(cfg Config) (*Worker, error) {
@@ -32,51 +30,38 @@ func New(cfg Config) (*Worker, error) {
 		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
 
-	// initialize consumer
-	rmqConsumer, err := rmq.NewConsumer(rmq.ConsumerConfig{
-		QueueName:          cfg.QueueName,
-		RabbitMQConnString: cfg.RabbitMQConnString,
-		Handler: func(d rabbitmq.Delivery) rabbitmq.Action {
-			// parse the message
-			var n shcore.WhatsappNotification
-			err := json.Unmarshal(d.Body, &n)
-			if err != nil {
-				// discard the message if failed to parse
-				return rabbitmq.NackDiscard
-			}
-
-			// handle the message
-			log.Printf("handling notification %s\n", d.Body)
-			err = cfg.Service.Handle(context.Background(), n)
-			if err != nil {
-				// output error and sleep for 1 second
-				log.Printf("failed to handle notification %+v: %v, sleeping for 1 second...\n", n, err)
-				time.Sleep(1 * time.Second)
-
-				// requeue the message if failed to handle
-				return rabbitmq.NackRequeue
-			}
-
-			return rabbitmq.Ack
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize rabbitmq consumer: %w", err)
-	}
-
-	return &Worker{
-		svc:      cfg.Service,
-		consumer: rmqConsumer,
-	}, nil
+	return &Worker{Config: cfg}, nil
 }
 
 // Run starts the worker and block until it's done.
 func (w *Worker) Run() error {
-	err := w.consumer.Run()
+	// run the consumer
+	err := w.RmqConsumer.Run(func(d rabbitmq.Delivery) rabbitmq.Action {
+		// parse the message
+		var n shcore.WhatsappNotification
+		err := json.Unmarshal(d.Body, &n)
+		if err != nil {
+			// discard the message if failed to parse
+			return rabbitmq.NackDiscard
+		}
+
+		// handle the message
+		log.Printf("handling notification %s\n", d.Body)
+		err = w.Config.Service.Handle(context.Background(), n)
+		if err != nil {
+			// output error and sleep for 1 second
+			log.Printf("failed to handle notification %+v: %v, sleeping for 1 second...\n", n, err)
+			time.Sleep(1 * time.Second)
+
+			// requeue the message if failed to handle
+			return rabbitmq.NackRequeue
+		}
+
+		return rabbitmq.Ack
+	})
 	if err != nil {
-		return fmt.Errorf("failed to run consumer: %w", err)
+		return fmt.Errorf("failed to run rabbitmq consumer: %w", err)
 	}
-	w.consumer.Close()
 
 	return nil
 }
