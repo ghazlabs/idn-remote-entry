@@ -17,7 +17,7 @@ func TestNotify(t *testing.T) {
 		HttpClient:   resty.New(),
 		Username:     env.GetString(testutil.EnvKeyWhatsappApiUser),
 		Password:     env.GetString(testutil.EnvKeyWhatsappApiPass),
-		WaApiBaseUrl: env.GetString(testutil.EnvKeyWhatsappApiURL),
+		WaApiBaseUrl: env.GetString(testutil.EnvKeyWhatsappApiBaseUrl),
 	})
 	require.NoError(t, err)
 
