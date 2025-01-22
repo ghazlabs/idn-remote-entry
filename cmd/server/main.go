@@ -13,11 +13,11 @@ import (
 	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/resolver/parser"
 	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/storage"
 	"github.com/ghazlabs/idn-remote-entry/internal/server/driver"
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmqutil"
 	"github.com/go-resty/resty/v2"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/riandyrn/go-env"
-	"github.com/wagslane/go-rabbitmq"
 )
 
 const (
@@ -85,29 +85,19 @@ func main() {
 		log.Fatalf("failed to initialize resolver: %v", err)
 	}
 
-	// initialize rabbitmq connection
-	rmqConn, err := rabbitmq.NewConn(
-		env.GetString(envKeyRabbitMQConn),
-		rabbitmq.WithConnectionOptionsLogging,
-	)
-	if err != nil {
-		log.Fatalf("failed to initialize rabbitmq connection: %v", err)
-	}
-
 	// initialize rabbitmq publisher
-	rmqPub, err := rabbitmq.NewPublisher(
-		rmqConn,
-		rabbitmq.WithPublisherOptionsLogging,
-		rabbitmq.WithPublisherOptionsExchangeName(env.GetString(envKeyRabbitMQWaQueueName)),
-		rabbitmq.WithPublisherOptionsExchangeDeclare,
-	)
+	waRmqPub, err := rmqutil.NewPublisher(rmqutil.PublisherConfig{
+		QueueName:          env.GetString(envKeyRabbitMQWaQueueName),
+		RabbitMQConnString: env.GetString(envKeyRabbitMQConn),
+	})
 	if err != nil {
 		log.Fatalf("failed to initialize rabbitmq publisher: %v", err)
 	}
+	defer waRmqPub.Close()
 
 	// initialize notifier
 	waNotf, err := notifier.NewWhatsappNotifier(notifier.WhatsappNotifierConfig{
-		RmqPublisher:         rmqPub,
+		RmqPublisher:         waRmqPub,
 		WhatsappRecipientIDs: env.GetStrings(envKeyWhatsappRecipientIDs, ","),
 		QueueName:            env.GetString(envKeyRabbitMQWaQueueName),
 	})

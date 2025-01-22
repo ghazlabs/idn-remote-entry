@@ -3,12 +3,12 @@ package main
 import (
 	"log"
 
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmqutil"
 	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/driven/publisher"
 	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/driver/worker"
 	"github.com/go-resty/resty/v2"
 	"github.com/riandyrn/go-env"
-	"github.com/wagslane/go-rabbitmq"
 )
 
 const (
@@ -39,27 +39,15 @@ func main() {
 		log.Fatalf("failed to initialize service: %v", err)
 	}
 
-	// initialize rabbitmq connection
-	rmqConn, err := rabbitmq.NewConn(
-		env.GetString(envKeyRabbitMQConn),
-		rabbitmq.WithConnectionOptionsLogging,
-	)
-	if err != nil {
-		log.Fatalf("failed to initialize rabbitmq connection: %v", err)
-	}
-
 	// initialize rabbitmq consumer
-	queueName := env.GetString(envKeyRabbitMQWaQueueName)
-	rmqConsumer, err := rabbitmq.NewConsumer(
-		rmqConn,
-		queueName,
-		rabbitmq.WithConsumerOptionsRoutingKey(queueName),
-		rabbitmq.WithConsumerOptionsExchangeName(queueName),
-		rabbitmq.WithConsumerOptionsExchangeDeclare,
-	)
+	rmqConsumer, err := rmqutil.NewConsumer(rmqutil.ConsumerConfig{
+		QueueName:          env.GetString(envKeyRabbitMQWaQueueName),
+		RabbitMQConnString: env.GetString(envKeyRabbitMQConn),
+	})
 	if err != nil {
 		log.Fatalf("failed to initialize rabbitmq consumer: %v", err)
 	}
+	defer rmqConsumer.Close()
 
 	// initialize worker
 	w, err := worker.New(worker.Config{
