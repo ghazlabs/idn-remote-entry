@@ -96,9 +96,9 @@ func main() {
 	defer waRmqPub.Close()
 
 	// initialize notifier
-	waNotf, err := notifier.NewWhatsappNotifier(notifier.WhatsappNotifierConfig{
-		RmqPublisher:         waRmqPub,
-		WhatsappRecipientIDs: env.GetStrings(envKeyWhatsappRecipientIDs, ","),
+	waNotf, err := notifier.NewWaNotifier(notifier.WaNotifierConfig{
+		RmqPublisher:   waRmqPub,
+		WaRecipientIDs: env.GetStrings(envKeyWhatsappRecipientIDs, ","),
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize notifier: %v", err)
