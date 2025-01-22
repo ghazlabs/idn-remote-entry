@@ -15,14 +15,12 @@ import (
 )
 
 type Worker struct {
-	svc         core.Service
-	rmqConsumer *rabbitmq.Consumer
+	Config
 }
 
 type Config struct {
-	Service   core.Service   `validate:"nonnil"`
-	RmqConn   *rabbitmq.Conn `validate:"nonnil"`
-	QueueName string         `validate:"nonzero"`
+	Service     core.Service       `validate:"nonnil"`
+	RmqConsumer *rabbitmq.Consumer `validate:"nonnil"`
 }
 
 func New(cfg Config) (*Worker, error) {
@@ -32,20 +30,7 @@ func New(cfg Config) (*Worker, error) {
 		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
 
-	// initialize consumer
-	consumer, err := rabbitmq.NewConsumer(
-		cfg.RmqConn,
-		cfg.QueueName,
-		rabbitmq.WithConsumerOptionsRoutingKey(cfg.QueueName),
-		rabbitmq.WithConsumerOptionsExchangeName(cfg.QueueName),
-		rabbitmq.WithConsumerOptionsExchangeDeclare,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize consumer: %w", err)
-	}
-
-	w := &Worker{svc: cfg.Service, rmqConsumer: consumer}
-	return w, nil
+	return &Worker{Config: cfg}, nil
 }
 
 // Run starts the worker and block until it's done.
@@ -57,12 +42,11 @@ func (w *Worker) Run() error {
 
 	go func() {
 		<-shutdownCh
-		w.rmqConsumer.Close()
 		done <- true
 	}()
 
 	// start consuming messages
-	err := w.rmqConsumer.Run(func(d rabbitmq.Delivery) rabbitmq.Action {
+	err := w.RmqConsumer.Run(func(d rabbitmq.Delivery) rabbitmq.Action {
 		// parse the message
 		var n shcore.WhatsappNotification
 		err := json.Unmarshal(d.Body, &n)
@@ -72,7 +56,7 @@ func (w *Worker) Run() error {
 		}
 
 		// handle the message
-		err = w.svc.Handle(context.Background(), n)
+		err = w.Service.Handle(context.Background(), n)
 		if err != nil {
 			// requeue the message if failed to handle
 			return rabbitmq.NackRequeue

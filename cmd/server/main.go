@@ -17,6 +17,7 @@ import (
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/riandyrn/go-env"
+	"github.com/wagslane/go-rabbitmq"
 )
 
 const (
@@ -28,6 +29,8 @@ const (
 	envKeyWhatsappApiUser      = "WHATSAPP_API_USER"
 	envKeyWhatsappApiPass      = "WHATSAPP_API_PASS"
 	envKeyWhatsappRecipientIDs = "WHATSAPP_RECIPIENT_IDS"
+	envKeyRabbitMQConn         = "RABBITMQ_CONN"
+	envKeyRabbitMQWaQueueName  = "RABBITMQ_WA_QUEUE_NAME"
 )
 
 func main() {
@@ -84,12 +87,31 @@ func main() {
 		log.Fatalf("failed to initialize resolver: %v", err)
 	}
 
+	// initialize rabbitmq connection
+	rmqConn, err := rabbitmq.NewConn(
+		env.GetString(envKeyRabbitMQConn),
+		rabbitmq.WithConnectionOptionsLogging,
+	)
+	if err != nil {
+		log.Fatalf("failed to initialize rabbitmq connection: %v", err)
+	}
+
+	// initialize rabbitmq publisher
+	rmqPub, err := rabbitmq.NewPublisher(
+		rmqConn,
+		rabbitmq.WithPublisherOptionsLogging,
+		rabbitmq.WithPublisherOptionsExchangeName(env.GetString(envKeyRabbitMQWaQueueName)),
+		rabbitmq.WithPublisherOptionsExchangeDeclare,
+	)
+	if err != nil {
+		log.Fatalf("failed to initialize rabbitmq publisher: %v", err)
+	}
+
 	// initialize notifier
-	notf, err := notifier.NewWhatsappNotifier(notifier.WhatsappNotifierConfig{
-		HttpClient:           httpClient,
-		Username:             env.GetString(envKeyWhatsappApiUser),
-		Password:             env.GetString(envKeyWhatsappApiPass),
+	waNotf, err := notifier.NewWhatsappNotifier(notifier.WhatsappNotifierConfig{
+		RmqPublisher:         rmqPub,
 		WhatsappRecipientIDs: env.GetStrings(envKeyWhatsappRecipientIDs, ","),
+		QueueName:            env.GetString(envKeyRabbitMQWaQueueName),
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize notifier: %v", err)
@@ -99,7 +121,7 @@ func main() {
 	svc, err := core.NewService(core.ServiceConfig{
 		Storage:         strg,
 		VacancyResolver: rslvr,
-		Notifier:        notf,
+		Notifier:        waNotf,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize service: %v", err)

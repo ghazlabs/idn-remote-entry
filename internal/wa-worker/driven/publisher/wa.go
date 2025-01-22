@@ -1,4 +1,4 @@
-package notifier
+package publisher
 
 import (
 	"context"
@@ -26,11 +26,10 @@ func NewWaPublisher(cfg WaPublisherConfig) (*WaPublisher, error) {
 }
 
 type WaPublisherConfig struct {
-	HttpClient           *resty.Client `validate:"nonnil"`
-	Username             string        `validate:"nonzero"`
-	Password             string        `validate:"nonzero"`
-	WhatsappRecipientIDs []string      `validate:"nonzero"`
-	WaServerURL          string        `validate:"nonzero"`
+	HttpClient *resty.Client `validate:"nonnil"`
+	Username   string        `validate:"nonzero"`
+	Password   string        `validate:"nonzero"`
+	WaApiUrl   string        `validate:"nonzero"`
 }
 
 func (n *WaPublisher) Publish(ctx context.Context, ntf core.WhatsappNotification) error {
@@ -42,7 +41,7 @@ func (n *WaPublisher) Publish(ctx context.Context, ntf core.WhatsappNotification
 			"phone":   ntf.RecipientID,
 			"message": convertVacancyToMessage(ntf.VacancyRecord),
 		}).
-		Post(fmt.Sprintf("%v/send/message", n.WaServerURL))
+		Post(fmt.Sprintf("%v/send/message", n.WaApiUrl))
 	if err != nil {
 		return fmt.Errorf("unable to make http request: %w", err)
 	}
@@ -63,8 +62,6 @@ func convertVacancyToMessage(v core.VacancyRecord) string {
 		"",
 		fmt.Sprintf("🏢 %v", v.CompanyName),
 		fmt.Sprintf("📍 %v", v.CompanyLocation),
-		// "",
-		// v.ShortDescription,
 		"",
 		fmt.Sprintf("%v", v.PublicURL),
 		"",
