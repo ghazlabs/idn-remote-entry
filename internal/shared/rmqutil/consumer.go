@@ -2,6 +2,10 @@ package rmqutil
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/wagslane/go-rabbitmq"
 	"gopkg.in/validator.v2"
@@ -39,4 +43,29 @@ func NewConsumer(cfg ConsumerConfig) (*rabbitmq.Consumer, error) {
 	}
 
 	return rmqConsumer, nil
+}
+
+// RunConsumer starts the consumer and block until it's done.
+func RunConsumer(c *rabbitmq.Consumer, f func(rabbitmq.Delivery) rabbitmq.Action) error {
+	// define channel to receive shutdown signal
+	shutdownCh := make(chan os.Signal, 1)
+	signal.Notify(shutdownCh, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
+	done := make(chan bool)
+
+	go func() {
+		<-shutdownCh
+		log.Println("shutting down worker...")
+		done <- true
+	}()
+
+	// start consuming messages
+	err := c.Run(f)
+	if err != nil {
+		return fmt.Errorf("failed to start consuming messages: %w", err)
+	}
+
+	// wait for cleanup to finish
+	<-done
+
+	return nil
 }

@@ -5,12 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	shcore "github.com/ghazlabs/idn-remote-entry/internal/shared/core"
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmqutil"
 	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/core"
 	"github.com/wagslane/go-rabbitmq"
 	"gopkg.in/validator.v2"
@@ -37,19 +35,7 @@ func New(cfg Config) (*Worker, error) {
 
 // Run starts the worker and block until it's done.
 func (w *Worker) Run() error {
-	// define channel to receive shutdown signal
-	shutdownCh := make(chan os.Signal, 1)
-	signal.Notify(shutdownCh, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
-	done := make(chan bool)
-
-	go func() {
-		<-shutdownCh
-		log.Println("shutting down worker...")
-		done <- true
-	}()
-
-	// start consuming messages
-	err := w.RmqConsumer.Run(func(d rabbitmq.Delivery) rabbitmq.Action {
+	return rmqutil.RunConsumer(w.RmqConsumer, func(d rabbitmq.Delivery) rabbitmq.Action {
 		// parse the message
 		var n shcore.WhatsappNotification
 		err := json.Unmarshal(d.Body, &n)
@@ -72,12 +58,4 @@ func (w *Worker) Run() error {
 
 		return rabbitmq.Ack
 	})
-	if err != nil {
-		return fmt.Errorf("failed to start consuming messages: %w", err)
-	}
-
-	// wait for cleanup to finish
-	<-done
-
-	return nil
 }
