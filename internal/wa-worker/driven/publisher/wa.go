@@ -26,10 +26,10 @@ func NewWaPublisher(cfg WaPublisherConfig) (*WaPublisher, error) {
 }
 
 type WaPublisherConfig struct {
-	HttpClient *resty.Client `validate:"nonnil"`
-	Username   string        `validate:"nonzero"`
-	Password   string        `validate:"nonzero"`
-	WaApiUrl   string        `validate:"nonzero"`
+	HttpClient   *resty.Client `validate:"nonnil"`
+	Username     string        `validate:"nonzero"`
+	Password     string        `validate:"nonzero"`
+	WaApiBaseUrl string        `validate:"nonzero"`
 }
 
 func (n *WaPublisher) Publish(ctx context.Context, ntf core.WhatsappNotification) error {
@@ -41,7 +41,7 @@ func (n *WaPublisher) Publish(ctx context.Context, ntf core.WhatsappNotification
 			"phone":   ntf.RecipientID,
 			"message": convertVacancyToMessage(ntf.VacancyRecord),
 		}).
-		Post(fmt.Sprintf("%v/send/message", n.WaApiUrl))
+		Post(fmt.Sprintf("%v/send/message", n.WaApiBaseUrl))
 	if err != nil {
 		return fmt.Errorf("unable to make http request: %w", err)
 	}

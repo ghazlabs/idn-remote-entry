@@ -26,8 +26,6 @@ const (
 	envKeyOpenAiKey            = "OPENAI_KEY"
 	envKeyListenPort           = "LISTEN_PORT"
 	envKeyClientApiKey         = "CLIENT_API_KEY"
-	envKeyWhatsappApiUser      = "WHATSAPP_API_USER"
-	envKeyWhatsappApiPass      = "WHATSAPP_API_PASS"
 	envKeyWhatsappRecipientIDs = "WHATSAPP_RECIPIENT_IDS"
 	envKeyRabbitMQConn         = "RABBITMQ_CONN"
 	envKeyRabbitMQWaQueueName  = "RABBITMQ_WA_QUEUE_NAME"

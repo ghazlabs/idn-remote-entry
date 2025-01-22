@@ -14,10 +14,10 @@ import (
 
 func TestNotify(t *testing.T) {
 	p, err := publisher.NewWaPublisher(publisher.WaPublisherConfig{
-		HttpClient: resty.New(),
-		Username:   env.GetString(testutil.EnvKeyWhatsappApiUser),
-		Password:   env.GetString(testutil.EnvKeyWhatsappApiPass),
-		WaApiUrl:   env.GetString(testutil.EnvKeyWhatsappApiURL),
+		HttpClient:   resty.New(),
+		Username:     env.GetString(testutil.EnvKeyWhatsappApiUser),
+		Password:     env.GetString(testutil.EnvKeyWhatsappApiPass),
+		WaApiBaseUrl: env.GetString(testutil.EnvKeyWhatsappApiURL),
 	})
 	require.NoError(t, err)
 
