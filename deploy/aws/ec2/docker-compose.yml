@@ -11,6 +11,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
 
   server:
     build:
@@ -44,3 +46,6 @@ services:
       - WHATSAPP_API_BASE_URL=${GHAZLABS_WA_SERVER_URL}
       - RABBITMQ_CONN=amqp://guest:guest@rabbitmq:5672/
       - RABBITMQ_WA_QUEUE_NAME=wa_queue
+
+volumes:
+  rabbitmq_data:

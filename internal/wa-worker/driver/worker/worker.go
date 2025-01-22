@@ -5,12 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	shcore "github.com/ghazlabs/idn-remote-entry/internal/shared/core"
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmq"
 	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/core"
 	"github.com/wagslane/go-rabbitmq"
 	"gopkg.in/validator.v2"
@@ -21,8 +19,8 @@ type Worker struct {
 }
 
 type Config struct {
-	Service     core.Service       `validate:"nonnil"`
-	RmqConsumer *rabbitmq.Consumer `validate:"nonnil"`
+	Service     core.Service  `validate:"nonnil"`
+	RmqConsumer *rmq.Consumer `validate:"nonnil"`
 }
 
 func New(cfg Config) (*Worker, error) {
@@ -37,17 +35,7 @@ func New(cfg Config) (*Worker, error) {
 
 // Run starts the worker and block until it's done.
 func (w *Worker) Run() error {
-	// define channel to receive shutdown signal
-	shutdownCh := make(chan os.Signal, 1)
-	signal.Notify(shutdownCh, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
-	done := make(chan bool)
-
-	go func() {
-		<-shutdownCh
-		done <- true
-	}()
-
-	// start consuming messages
+	// run the consumer
 	err := w.RmqConsumer.Run(func(d rabbitmq.Delivery) rabbitmq.Action {
 		// parse the message
 		var n shcore.WhatsappNotification
@@ -59,7 +47,7 @@ func (w *Worker) Run() error {
 
 		// handle the message
 		log.Printf("handling notification %s\n", d.Body)
-		err = w.Service.Handle(context.Background(), n)
+		err = w.Config.Service.Handle(context.Background(), n)
 		if err != nil {
 			// output error and sleep for 1 second
 			log.Printf("failed to handle notification %+v: %v, sleeping for 1 second...\n", n, err)
@@ -72,11 +60,8 @@ func (w *Worker) Run() error {
 		return rabbitmq.Ack
 	})
 	if err != nil {
-		return fmt.Errorf("failed to start consuming messages: %w", err)
+		return fmt.Errorf("failed to run rabbitmq consumer: %w", err)
 	}
-
-	// wait for cleanup to finish
-	<-done
 
 	return nil
 }
