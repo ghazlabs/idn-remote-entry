@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmqutil"
 	"github.com/wagslane/go-rabbitmq"
 	"gopkg.in/validator.v2"
 )
@@ -38,13 +39,12 @@ func (n *WhatsappNotifier) Notify(ctx context.Context, v core.VacancyRecord) err
 			VacancyRecord: v,
 		}
 		data, _ := json.Marshal(ntf)
-		err := n.RmqPublisher.PublishWithContext(
-			ctx,
-			data,
-			[]string{n.QueueName},
-			rabbitmq.WithPublishOptionsContentType("application/json"),
-			rabbitmq.WithPublishOptionsExchange(n.QueueName),
-		)
+		err := rmqutil.Publish(ctx, rmqutil.PublishParams{
+			Publisher:   n.RmqPublisher,
+			ContentType: "application/json",
+			QueueName:   n.QueueName,
+			Data:        data,
+		})
 		if err != nil {
 			return fmt.Errorf("failed to publish notification %+v: %w", ntf, err)
 		}

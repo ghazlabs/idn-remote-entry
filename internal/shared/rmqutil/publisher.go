@@ -1,6 +1,7 @@
 package rmqutil
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/wagslane/go-rabbitmq"
@@ -41,4 +42,21 @@ func NewPublisher(cfg PublisherConfig) (*rabbitmq.Publisher, error) {
 	}
 
 	return rmqPub, nil
+}
+
+func Publish(ctx context.Context, p PublishParams) error {
+	return p.Publisher.PublishWithContext(
+		ctx,
+		p.Data,
+		[]string{p.QueueName},
+		rabbitmq.WithPublishOptionsContentType(p.ContentType),
+		rabbitmq.WithPublishOptionsExchange(p.QueueName),
+	)
+}
+
+type PublishParams struct {
+	Publisher   *rabbitmq.Publisher
+	ContentType string
+	QueueName   string
+	Data        []byte
 }
