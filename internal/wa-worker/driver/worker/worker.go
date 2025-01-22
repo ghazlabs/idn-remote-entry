@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	shcore "github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/core"
@@ -56,8 +58,13 @@ func (w *Worker) Run() error {
 		}
 
 		// handle the message
+		log.Printf("handling notification %s\n", d.Body)
 		err = w.Service.Handle(context.Background(), n)
 		if err != nil {
+			// output error and sleep for 1 second
+			log.Printf("failed to handle notification %+v: %v, sleeping for 1 second...\n", n, err)
+			time.Sleep(1 * time.Second)
+
 			// requeue the message if failed to handle
 			return rabbitmq.NackRequeue
 		}
