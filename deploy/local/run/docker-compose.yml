@@ -1,7 +1,6 @@
 services:
   rabbitmq:
     image: rabbitmq:4.0.5-management
-    container_name: rabbitmq
     ports:
       - "15672:15672"  # Management web UI
     environment:
