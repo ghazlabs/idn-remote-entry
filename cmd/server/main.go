@@ -13,7 +13,7 @@ import (
 	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/resolver/parser"
 	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/storage"
 	"github.com/ghazlabs/idn-remote-entry/internal/server/driver"
-	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmqutil"
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmq"
 	"github.com/go-resty/resty/v2"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -86,7 +86,7 @@ func main() {
 	}
 
 	// initialize rabbitmq publisher
-	waRmqPub, err := rmqutil.NewPublisher(rmqutil.PublisherConfig{
+	waRmqPub, err := rmq.NewPublisher(rmq.PublisherConfig{
 		QueueName:          env.GetString(envKeyRabbitMQWaQueueName),
 		RabbitMQConnString: env.GetString(envKeyRabbitMQConn),
 	})
@@ -99,7 +99,6 @@ func main() {
 	waNotf, err := notifier.NewWhatsappNotifier(notifier.WhatsappNotifierConfig{
 		RmqPublisher:         waRmqPub,
 		WhatsappRecipientIDs: env.GetStrings(envKeyWhatsappRecipientIDs, ","),
-		QueueName:            env.GetString(envKeyRabbitMQWaQueueName),
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize notifier: %v", err)

@@ -1,4 +1,4 @@
-package rmqutil
+package rmq
 
 import (
 	"context"
@@ -8,12 +8,17 @@ import (
 	"gopkg.in/validator.v2"
 )
 
+type Publisher struct {
+	rmqPublisher *rabbitmq.Publisher
+	queueName    string
+}
+
 type PublisherConfig struct {
 	QueueName          string `validate:"nonzero"`
 	RabbitMQConnString string `validate:"nonzero"`
 }
 
-func NewPublisher(cfg PublisherConfig) (*rabbitmq.Publisher, error) {
+func NewPublisher(cfg PublisherConfig) (*Publisher, error) {
 	// validate config
 	err := validator.Validate(cfg)
 	if err != nil {
@@ -41,22 +46,27 @@ func NewPublisher(cfg PublisherConfig) (*rabbitmq.Publisher, error) {
 		return nil, fmt.Errorf("failed to initialize rabbitmq publisher: %w", err)
 	}
 
-	return rmqPub, nil
+	return &Publisher{
+		rmqPublisher: rmqPub,
+		queueName:    cfg.QueueName,
+	}, nil
 }
 
-func Publish(ctx context.Context, p PublishParams) error {
-	return p.Publisher.PublishWithContext(
+func (p *Publisher) Publish(ctx context.Context, params PublishParams) error {
+	return p.rmqPublisher.PublishWithContext(
 		ctx,
-		p.Data,
-		[]string{p.QueueName},
-		rabbitmq.WithPublishOptionsContentType(p.ContentType),
-		rabbitmq.WithPublishOptionsExchange(p.QueueName),
+		params.Data,
+		[]string{p.queueName},
+		rabbitmq.WithPublishOptionsContentType(params.ContentType),
+		rabbitmq.WithPublishOptionsExchange(p.queueName),
 	)
 }
 
+func (p *Publisher) Close() {
+	p.rmqPublisher.Close()
+}
+
 type PublishParams struct {
-	Publisher   *rabbitmq.Publisher
 	ContentType string
-	QueueName   string
 	Data        []byte
 }

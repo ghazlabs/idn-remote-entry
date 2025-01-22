@@ -6,8 +6,7 @@ import (
 	"fmt"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
-	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmqutil"
-	"github.com/wagslane/go-rabbitmq"
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmq"
 	"gopkg.in/validator.v2"
 )
 
@@ -27,9 +26,8 @@ func NewWhatsappNotifier(cfg WhatsappNotifierConfig) (*WhatsappNotifier, error) 
 }
 
 type WhatsappNotifierConfig struct {
-	RmqPublisher         *rabbitmq.Publisher `validate:"nonnil"`
-	WhatsappRecipientIDs []string            `validate:"nonzero"`
-	QueueName            string              `validate:"nonzero"`
+	RmqPublisher         *rmq.Publisher `validate:"nonnil"`
+	WhatsappRecipientIDs []string       `validate:"nonzero"`
 }
 
 func (n *WhatsappNotifier) Notify(ctx context.Context, v core.VacancyRecord) error {
@@ -39,10 +37,8 @@ func (n *WhatsappNotifier) Notify(ctx context.Context, v core.VacancyRecord) err
 			VacancyRecord: v,
 		}
 		data, _ := json.Marshal(ntf)
-		err := rmqutil.Publish(ctx, rmqutil.PublishParams{
-			Publisher:   n.RmqPublisher,
+		err := n.RmqPublisher.Publish(ctx, rmq.PublishParams{
 			ContentType: "application/json",
-			QueueName:   n.QueueName,
 			Data:        data,
 		})
 		if err != nil {

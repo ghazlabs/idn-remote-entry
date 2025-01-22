@@ -1,4 +1,4 @@
-package rmqutil
+package rmq
 
 import (
 	"fmt"
@@ -11,9 +11,19 @@ import (
 	"gopkg.in/validator.v2"
 )
 
-type ConsumerConfig PublisherConfig
+type Consumer struct {
+	rmqConsumer *rabbitmq.Consumer
+	queueName   string
+	handler     func(rabbitmq.Delivery) rabbitmq.Action
+}
 
-func NewConsumer(cfg ConsumerConfig) (*rabbitmq.Consumer, error) {
+type ConsumerConfig struct {
+	QueueName          string                                  `validate:"nonzero"`
+	RabbitMQConnString string                                  `validate:"nonzero"`
+	Handler            func(rabbitmq.Delivery) rabbitmq.Action `validate:"nonnil"`
+}
+
+func NewConsumer(cfg ConsumerConfig) (*Consumer, error) {
 	err := validator.Validate(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
@@ -42,11 +52,15 @@ func NewConsumer(cfg ConsumerConfig) (*rabbitmq.Consumer, error) {
 		return nil, fmt.Errorf("failed to initialize rabbitmq consumer: %w", err)
 	}
 
-	return rmqConsumer, nil
+	return &Consumer{
+		rmqConsumer: rmqConsumer,
+		queueName:   cfg.QueueName,
+		handler:     cfg.Handler,
+	}, nil
 }
 
-// RunConsumer starts the consumer and block until it's done.
-func RunConsumer(c *rabbitmq.Consumer, f func(rabbitmq.Delivery) rabbitmq.Action) error {
+// Run starts the consumer and block until it's done.
+func (c *Consumer) Run() error {
 	// define channel to receive shutdown signal
 	shutdownCh := make(chan os.Signal, 1)
 	signal.Notify(shutdownCh, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
@@ -59,7 +73,7 @@ func RunConsumer(c *rabbitmq.Consumer, f func(rabbitmq.Delivery) rabbitmq.Action
 	}()
 
 	// start consuming messages
-	err := c.Run(f)
+	err := c.rmqConsumer.Run(c.handler)
 	if err != nil {
 		return fmt.Errorf("failed to start consuming messages: %w", err)
 	}
@@ -68,4 +82,8 @@ func RunConsumer(c *rabbitmq.Consumer, f func(rabbitmq.Delivery) rabbitmq.Action
 	<-done
 
 	return nil
+}
+
+func (c *Consumer) Close() {
+	c.rmqConsumer.Close()
 }
