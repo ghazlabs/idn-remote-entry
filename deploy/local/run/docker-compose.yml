@@ -1,8 +1,25 @@
 services:
+  rabbitmq:
+    image: rabbitmq:4.0.5-management
+    container_name: rabbitmq
+    ports:
+      - "15672:15672"  # Management web UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest 
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   server:
     build:
       context: ../../../
       dockerfile: ./build/package/server/Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     environment:
       - NOTION_DATABASE_ID=${IDN_REMOTE_ENTRY_NOTION_DATABASE_ID_DEV} # this is dev table
       - NOTION_TOKEN=${IDN_REMOTE_ENTRY_NOTION_TOKEN}
@@ -12,5 +29,7 @@ services:
       - WHATSAPP_API_USER=${GHAZLABS_WA_SERVER_USER}
       - WHATSAPP_API_PASS=${GHAZLABS_WA_SERVER_PASS}
       - WHATSAPP_RECIPIENT_IDS=120363390036841640@newsletter,120363376193442839@g.us # this is dev channel & dev community
+      - RABBITMQ_CONN=amqp://guest:guest@rabbitmq:5672/
+      - RABBITMQ_WA_QUEUE_NAME=wa_queue
     ports:
       - "9864:9864"
