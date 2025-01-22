@@ -44,6 +44,7 @@ func (w *Worker) Run() error {
 
 	go func() {
 		<-shutdownCh
+		log.Println("shutting down worker...")
 		done <- true
 	}()
 
