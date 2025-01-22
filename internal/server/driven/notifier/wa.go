@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ghazlabs/idn-remote-entry/internal/server/core"
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"github.com/go-resty/resty/v2"
 	"gopkg.in/validator.v2"
 )

@@ -1,15 +1,19 @@
 package core
 
-import "context"
+import (
+	"context"
+
+	shcore "github.com/ghazlabs/idn-remote-entry/internal/shared/core"
+)
 
 type Storage interface {
-	Save(ctx context.Context, v Vacancy) (*VacancyRecord, error)
+	Save(ctx context.Context, v shcore.Vacancy) (*shcore.VacancyRecord, error)
 }
 
 type VacancyResolver interface {
-	Resolve(ctx context.Context, url string) (*Vacancy, error)
+	Resolve(ctx context.Context, url string) (*shcore.Vacancy, error)
 }
 
 type Notifier interface {
-	Notify(ctx context.Context, v VacancyRecord) error
+	Notify(ctx context.Context, v shcore.VacancyRecord) error
 }

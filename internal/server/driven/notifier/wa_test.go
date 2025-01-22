@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ghazlabs/idn-remote-entry/internal/server/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/notifier"
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/testutil"
 	"github.com/go-resty/resty/v2"
 	"github.com/riandyrn/go-env"

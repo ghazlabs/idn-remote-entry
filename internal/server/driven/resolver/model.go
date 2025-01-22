@@ -1,6 +1,6 @@
 package resolver
 
-import "github.com/ghazlabs/idn-remote-entry/internal/server/core"
+import "github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 
 type VacancyInfo struct {
 	JobTitle         string   `json:"job_title" jsonschema_description:"Title of the job taken from the vacancy description, if not found then it should be empty"`

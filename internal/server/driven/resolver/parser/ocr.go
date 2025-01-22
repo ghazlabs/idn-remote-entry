@@ -5,9 +5,9 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/ghazlabs/idn-remote-entry/internal/server/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/resolver"
 	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/resolver/util"
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"github.com/openai/openai-go"
 	"gopkg.in/validator.v2"
 )

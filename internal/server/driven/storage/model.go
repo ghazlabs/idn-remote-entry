@@ -3,7 +3,7 @@ package storage
 import (
 	"time"
 
-	"github.com/ghazlabs/idn-remote-entry/internal/server/core"
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 )
 
 type BlockTitle struct {
