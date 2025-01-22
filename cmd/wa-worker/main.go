@@ -25,7 +25,7 @@ func main() {
 		HttpClient:   resty.New(),
 		Username:     env.GetString(envKeyWhatsappApiUser),
 		Password:     env.GetString(envKeyWhatsappApiPass),
-		WaApiBaseUrl: envKeyWhatsappApiBaseUrl,
+		WaApiBaseUrl: env.GetString(envKeyWhatsappApiBaseUrl),
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize publisher: %v", err)
