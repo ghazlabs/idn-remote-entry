@@ -14,3 +14,8 @@ type VacancyRecord struct {
 	PublicURL string `json:"public_url"`
 	Vacancy
 }
+
+type WhatsappNotification struct {
+	RecipientID string `json:"recipient_id"`
+	VacancyRecord
+}

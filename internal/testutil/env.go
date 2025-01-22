@@ -5,6 +5,7 @@ const (
 	EnvKeyWhatsappApiUser      = "TEST_WHATSAPP_API_USER"
 	EnvKeyWhatsappApiPass      = "TEST_WHATSAPP_API_PASS"
 	EnvKeyWhatsappRecipientIDs = "TEST_WHATSAPP_RECIPIENT_IDS"
+	EnvKeyWhatsappServerURL    = "TEST_WHATSAPP_SERVER_URL"
 	EnvKeyNotionToken          = "TEST_NOTION_TOKEN"
 	EnvKeyNotionDatabaseID     = "TEST_NOTION_DATABASE_ID"
 )
