@@ -47,6 +47,10 @@ func (w *Worker) Run() error {
 
 		// handle the message
 		log.Printf("handling vacancy %s\n", d.Body)
+		startTime := time.Now()
+		defer func() {
+			log.Printf("handled vacancy %s in %v\n", d.Body, time.Since(startTime))
+		}()
 		err = w.Config.Service.Handle(context.Background(), req)
 		if err != nil {
 			// output error and sleep for 1 second
