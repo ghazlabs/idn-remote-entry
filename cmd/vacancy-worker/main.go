@@ -10,6 +10,7 @@ import (
 	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driven/resolver/hqloc"
 	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driven/resolver/parser"
 	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driven/storage"
+	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driver/worker"
 	"github.com/go-resty/resty/v2"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -17,12 +18,13 @@ import (
 )
 
 const (
-	envKeyNotionDatabaseID     = "NOTION_DATABASE_ID"
-	envKeyNotionToken          = "NOTION_TOKEN"
-	envKeyOpenAiKey            = "OPENAI_KEY"
-	envKeyWhatsappRecipientIDs = "WHATSAPP_RECIPIENT_IDS"
-	envKeyRabbitMQConn         = "RABBITMQ_CONN"
-	envKeyRabbitMQWaQueueName  = "RABBITMQ_WA_QUEUE_NAME"
+	envKeyNotionDatabaseID         = "NOTION_DATABASE_ID"
+	envKeyNotionToken              = "NOTION_TOKEN"
+	envKeyOpenAiKey                = "OPENAI_KEY"
+	envKeyWhatsappRecipientIDs     = "WHATSAPP_RECIPIENT_IDS"
+	envKeyRabbitMQConn             = "RABBITMQ_CONN"
+	envKeyRabbitMQWaQueueName      = "RABBITMQ_WA_QUEUE_NAME"
+	envKeyRabbitMQVacancyQueueName = "RABBITMQ_VACANCY_QUEUE_NAME"
 )
 
 func main() {
@@ -106,5 +108,31 @@ func main() {
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize service: %v", err)
+	}
+
+	// initialize consumer
+	rmqConsumer, err := rmq.NewConsumer(rmq.ConsumerConfig{
+		QueueName:          env.GetString(envKeyRabbitMQVacancyQueueName),
+		RabbitMQConnString: env.GetString(envKeyRabbitMQConn),
+	})
+	if err != nil {
+		log.Fatalf("failed to initialize consumer: %v", err)
+	}
+	defer rmqConsumer.Close()
+
+	// initialize worker
+	w, err := worker.New(worker.Config{
+		Service:     svc,
+		RmqConsumer: rmqConsumer,
+	})
+	if err != nil {
+		log.Fatalf("failed to initialize worker: %v", err)
+	}
+
+	// run worker
+	log.Printf("vacancy-worker is running...")
+	err = w.Run()
+	if err != nil {
+		log.Fatalf("failed to run worker: %v", err)
 	}
 }

@@ -6,7 +6,7 @@ test:
 
 run:
 	-make stop
-	docker compose -f ./deploy/local/run/docker-compose.yml up --build --attach=server --attach=wa-worker
+	docker compose -f ./deploy/local/run/docker-compose.yml up --build --attach=server --attach=wa-worker --attach=vacancy-worker
 
 stop:
 	docker compose -f ./deploy/local/run/docker-compose.yml down --remove-orphans

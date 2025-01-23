@@ -3,12 +3,12 @@ package core
 import "encoding/json"
 
 type Vacancy struct {
-	JobTitle         string   `json:"job_title"`
-	CompanyName      string   `json:"company_name"`
-	CompanyLocation  string   `json:"company_location"`
-	ShortDescription string   `json:"short_description"`
-	RelevantTags     []string `json:"relevant_tags"`
-	ApplyURL         string   `json:"apply_url"`
+	JobTitle         string   `json:"job_title,omitempty"`
+	CompanyName      string   `json:"company_name,omitempty"`
+	CompanyLocation  string   `json:"company_location,omitempty"`
+	ShortDescription string   `json:"short_description,omitempty"`
+	RelevantTags     []string `json:"relevant_tags,omitempty"`
+	ApplyURL         string   `json:"apply_url,omitempty"`
 }
 
 type VacancyRecord struct {
