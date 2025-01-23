@@ -22,16 +22,28 @@ services:
       rabbitmq:
         condition: service_healthy
     environment:
+      - LISTEN_PORT=9864
+      - CLIENT_API_KEY=${IDN_REMOTE_ENTRY_CLIENT_API_KEY}
+      - RABBITMQ_CONN=amqp://guest:guest@rabbitmq:5672/
+      - RABBITMQ_VACANCY_QUEUE_NAME=vacancy_queue
+    ports:
+      - "9864:9864"
+
+  vacancy-worker:
+    build:
+      context: ../../../
+      dockerfile: ./build/package/vacancy-worker/Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
       - NOTION_DATABASE_ID=${IDN_REMOTE_ENTRY_NOTION_DATABASE_ID_PROD} # this is prod table
       - NOTION_TOKEN=${IDN_REMOTE_ENTRY_NOTION_TOKEN}
       - OPENAI_KEY=${IDN_REMOTE_ENTRY_OPENAI_KEY}
-      - LISTEN_PORT=9864
-      - CLIENT_API_KEY=${IDN_REMOTE_ENTRY_CLIENT_API_KEY}
       - WHATSAPP_RECIPIENT_IDS=${IDN_REMOTE_ENTRY_WHATSAPP_RECIPIENT_IDS_PROD} # this is prod channel & prod community
       - RABBITMQ_CONN=amqp://guest:guest@rabbitmq:5672/
       - RABBITMQ_WA_QUEUE_NAME=wa_queue
-    ports:
-      - "9864:9864"
+      - RABBITMQ_VACANCY_QUEUE_NAME=vacancy_queue
 
   wa-worker:
     build:
