@@ -23,7 +23,7 @@ func TestNotify(t *testing.T) {
 
 	recIDs := env.GetStrings(testutil.EnvKeyWhatsappRecipientIDs, ",")
 	for _, recID := range recIDs {
-		ntf := core.WhatsappNotification{
+		ntf := core.WaNotification{
 			RecipientID: recID,
 			VacancyRecord: core.VacancyRecord{
 				ID: "17d35004-6357-8173-ad51-e4a2aa25af5e",

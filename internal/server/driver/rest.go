@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/server/core"
+	shcore "github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -58,7 +59,7 @@ func (a *API) serveSubmitVacancy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// decode the request
-	var req core.SubmitRequest
+	var req shcore.SubmitRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		render.Render(w, r, NewErrorResp(NewBadRequestError(err.Error())))
@@ -66,7 +67,7 @@ func (a *API) serveSubmitVacancy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// handle the request
-	err = a.Service.Handle(r.Context(), req)
+	err = a.Service.HandleRequest(r.Context(), req)
 	if err != nil {
 		render.Render(w, r, NewErrorResp(err))
 		return

@@ -2,7 +2,6 @@ package notifier
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
@@ -32,15 +31,11 @@ type WaNotifierConfig struct {
 
 func (n *WaNotifier) Notify(ctx context.Context, v core.VacancyRecord) error {
 	for _, waID := range n.WaRecipientIDs {
-		ntf := core.WhatsappNotification{
+		ntf := core.WaNotification{
 			RecipientID:   waID,
 			VacancyRecord: v,
 		}
-		data, _ := json.Marshal(ntf)
-		err := n.RmqPublisher.Publish(ctx, rmq.PublishParams{
-			ContentType: "application/json",
-			Data:        data,
-		})
+		err := n.RmqPublisher.Publish(ctx, ntf)
 		if err != nil {
 			return fmt.Errorf("failed to publish notification %+v: %w", ntf, err)
 		}

@@ -1,5 +1,7 @@
 package core
 
+import "encoding/json"
+
 type Vacancy struct {
 	JobTitle         string   `json:"job_title"`
 	CompanyName      string   `json:"company_name"`
@@ -15,7 +17,34 @@ type VacancyRecord struct {
 	Vacancy
 }
 
-type WhatsappNotification struct {
+type WaNotification struct {
 	RecipientID string `json:"recipient_id"`
 	VacancyRecord
+}
+
+func (v WaNotification) ToJSON() []byte {
+	data, _ := json.Marshal(v)
+	return data
+}
+
+type SubmitType string
+
+const (
+	SubmitTypeManual SubmitType = "manual"
+	SubmitTypeURL    SubmitType = "url"
+)
+
+type SubmitRequest struct {
+	SubmissionType SubmitType `json:"submission_type"`
+	Vacancy
+}
+
+func (r SubmitRequest) Validate() error {
+	// TODO
+	return nil
+}
+
+func (r SubmitRequest) ToJSON() []byte {
+	data, _ := json.Marshal(r)
+	return data
 }
