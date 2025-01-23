@@ -7,5 +7,5 @@ import (
 )
 
 type Publisher interface {
-	Publish(ctx context.Context, n shcore.WhatsappNotification) error
+	Publish(ctx context.Context, n shcore.WaNotification) error
 }

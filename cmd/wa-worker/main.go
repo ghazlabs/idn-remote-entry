@@ -59,6 +59,7 @@ func main() {
 	}
 
 	// run worker
+	log.Printf("wa-worker is running...")
 	err = w.Run()
 	if err != nil {
 		log.Fatalf("failed to run worker: %v", err)

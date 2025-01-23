@@ -9,7 +9,7 @@ import (
 )
 
 type Service interface {
-	Handle(ctx context.Context, n shcore.WhatsappNotification) error
+	Handle(ctx context.Context, n shcore.WaNotification) error
 }
 
 type ServiceConfig struct {
@@ -30,7 +30,7 @@ type service struct {
 	ServiceConfig
 }
 
-func (s *service) Handle(ctx context.Context, n shcore.WhatsappNotification) error {
+func (s *service) Handle(ctx context.Context, n shcore.WaNotification) error {
 	err := s.Publisher.Publish(ctx, n)
 	if err != nil {
 		return fmt.Errorf("failed to publish notification: %w", err)

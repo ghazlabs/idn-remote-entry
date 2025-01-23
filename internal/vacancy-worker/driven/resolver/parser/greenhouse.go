@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/resolver"
-	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/resolver/util"
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
+	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driven/resolver"
+	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driven/resolver/util"
 	"github.com/go-resty/resty/v2"
 	"github.com/openai/openai-go"
 	"gopkg.in/validator.v2"

@@ -52,12 +52,12 @@ func NewPublisher(cfg PublisherConfig) (*Publisher, error) {
 	}, nil
 }
 
-func (p *Publisher) Publish(ctx context.Context, params PublishParams) error {
+func (p *Publisher) Publish(ctx context.Context, m Message) error {
 	return p.rmqPublisher.PublishWithContext(
 		ctx,
-		params.Data,
+		m.ToJSON(),
 		[]string{p.queueName},
-		rabbitmq.WithPublishOptionsContentType(params.ContentType),
+		rabbitmq.WithPublishOptionsContentType("application/json"),
 		rabbitmq.WithPublishOptionsExchange(p.queueName),
 	)
 }
@@ -66,7 +66,6 @@ func (p *Publisher) Close() {
 	p.rmqPublisher.Close()
 }
 
-type PublishParams struct {
-	ContentType string
-	Data        []byte
+type Message interface {
+	ToJSON() []byte
 }

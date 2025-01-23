@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ghazlabs/idn-remote-entry/internal/server/core"
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"github.com/go-chi/render"
 )
 
