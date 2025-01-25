@@ -12,13 +12,16 @@ import (
 )
 
 type Consumer struct {
-	rmqConsumer *rabbitmq.Consumer
-	queueName   string
+	rmqConsumer  *rabbitmq.Consumer
+	rmqPublisher *rabbitmq.Publisher
+	queueName    string
+	maxRetry     int
 }
 
 type ConsumerConfig struct {
 	QueueName          string `validate:"nonzero"`
 	RabbitMQConnString string `validate:"nonzero"`
+	MaxMessageRetry    int    `validate:"min=0"`
 }
 
 func NewConsumer(cfg ConsumerConfig) (*Consumer, error) {
@@ -50,9 +53,23 @@ func NewConsumer(cfg ConsumerConfig) (*Consumer, error) {
 		return nil, fmt.Errorf("failed to initialize rabbitmq consumer: %w", err)
 	}
 
+	// initialize rabbitmq publisher for retry mechanism
+	rmqPub, err := rabbitmq.NewPublisher(
+		rmqConn,
+		rabbitmq.WithPublisherOptionsLogging,
+		rabbitmq.WithPublisherOptionsExchangeName(cfg.QueueName),
+		rabbitmq.WithPublisherOptionsExchangeDeclare,
+		rabbitmq.WithPublisherOptionsExchangeDurable,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize rabbitmq publisher: %w", err)
+	}
+
 	return &Consumer{
-		rmqConsumer: rmqConsumer,
-		queueName:   cfg.QueueName,
+		rmqConsumer:  rmqConsumer,
+		queueName:    cfg.QueueName,
+		maxRetry:     cfg.MaxMessageRetry,
+		rmqPublisher: rmqPub,
 	}, nil
 }
 
@@ -70,7 +87,45 @@ func (c *Consumer) Run(h func(rabbitmq.Delivery) rabbitmq.Action) error {
 	}()
 
 	// start consuming messages
-	err := c.rmqConsumer.Run(h)
+	err := c.rmqConsumer.Run(func(d rabbitmq.Delivery) (action rabbitmq.Action) {
+		// execute handler
+		act := h(d)
+
+		// handle retry mechanism
+		if act == rabbitmq.NackRequeue {
+			// check if message has been retried too many times
+			retryCount := d.Headers[retryHeaderKey].(int)
+			if retryCount >= c.maxRetry {
+				log.Printf("max retry reached for message %s\n", d.Body)
+				return rabbitmq.NackDiscard
+			}
+
+			// increment retry count
+			retryCount++
+			headers := map[string]interface{}(d.Headers)
+			headers[retryHeaderKey] = retryCount
+
+			// requeue the message
+			err := c.rmqPublisher.Publish(
+				d.Body,
+				[]string{c.queueName},
+				rabbitmq.WithPublishOptionsContentType(d.ContentType),
+				rabbitmq.WithPublishOptionsExchange(c.queueName),
+				rabbitmq.WithPublishOptionsHeaders(headers),
+				rabbitmq.WithPublishOptionsPersistentDelivery,
+			)
+			if err != nil {
+				log.Printf("failed to requeue message %s: %v\n", d.Body, err)
+				return rabbitmq.NackRequeue
+			}
+
+			// acknowledge the current failed message to remove it from queue
+			// since the new message has been requeued
+			return rabbitmq.Ack
+		}
+
+		return act
+	})
 	if err != nil {
 		return fmt.Errorf("failed to start consuming messages: %w", err)
 	}
@@ -82,5 +137,8 @@ func (c *Consumer) Run(h func(rabbitmq.Delivery) rabbitmq.Action) error {
 }
 
 func (c *Consumer) Close() {
+	c.rmqPublisher.Close()
 	c.rmqConsumer.Close()
 }
+
+const retryHeaderKey = "x-retry-count"
