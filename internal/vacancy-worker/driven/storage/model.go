@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"strings"
 	"time"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
@@ -70,9 +71,20 @@ func NewInsertRecordPaylod(databaseID string, now time.Time, v core.Vacancy) Ins
 	companyLocation.Text.Content = v.CompanyLocation
 	p.Properties.CompanyLocation.RichText = []BlockTextContent{companyLocation}
 
-	var shortDescription BlockTextContent
-	shortDescription.Text.Content = v.ShortDescription
-	p.Properties.ShortDescription.RichText = []BlockTextContent{shortDescription}
+	// for description, split the description by each paragraph (2 newlines)
+	// this is to overcome limit of Notion API which only allows 2000 characters
+	// per rich text block
+	var descBlocks []BlockTextContent
+	textParts := strings.Split(v.ShortDescription, "\n\n")
+	for i := 0; i < len(textParts); i++ {
+		var descBlock BlockTextContent
+		descBlock.Text.Content = textParts[i]
+		if i < len(textParts)-1 {
+			descBlock.Text.Content += "\n\n"
+		}
+		descBlocks = append(descBlocks, descBlock)
+	}
+	p.Properties.ShortDescription.RichText = descBlocks
 
 	var selects []BlockSelect
 	for _, tag := range v.RelevantTags {
