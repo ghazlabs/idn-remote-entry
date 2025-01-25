@@ -59,6 +59,7 @@ func (p *Publisher) Publish(ctx context.Context, m Message) error {
 		[]string{p.queueName},
 		rabbitmq.WithPublishOptionsContentType("application/json"),
 		rabbitmq.WithPublishOptionsExchange(p.queueName),
+		rabbitmq.WithPublishOptionsPersistentDelivery,
 	)
 }
 
