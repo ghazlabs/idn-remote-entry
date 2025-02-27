@@ -81,10 +81,8 @@ func main() {
 
 	// initialize locator
 	locator, err := hqloc.NewLocator(hqloc.LocatorConfig{
-		HttpClient:    httpClient,
 		OpenaAiClient: openAiClient,
-		DatabaseID:    env.GetString(envKeyNotionDatabaseID),
-		NotionToken:   env.GetString(envKeyNotionToken),
+		Storage:       strg,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize locator: %v", err)
