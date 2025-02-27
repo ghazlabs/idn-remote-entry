@@ -54,3 +54,37 @@ func (s *NotionStorage) Save(ctx context.Context, v core.Vacancy) (*core.Vacancy
 	}
 	return rec, nil
 }
+
+func (s *NotionStorage) LookupCompanyLocation(ctx context.Context, companyName string) (string, error) {
+	var respBody lookupRecordResponse
+	resp, err := s.HttpClient.R().
+		SetContext(ctx).
+		SetHeader("Authorization", "Bearer "+s.NotionToken).
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Notion-Version", "2022-06-28").
+		SetBody(map[string]interface{}{
+			"filter": map[string]interface{}{
+				"property": "Company Name",
+				"rich_text": map[string]string{
+					"equals": companyName,
+				},
+			},
+			"sorts": []map[string]string{
+				{
+					"property":  "Last edited time",
+					"direction": "descending",
+				},
+			},
+			"page_size": 1,
+		}).
+		SetResult(&respBody).
+		Post(fmt.Sprintf("https://api.notion.com/v1/databases/%s/query", s.DatabaseID))
+	if err != nil {
+		return "", fmt.Errorf("failed to call notion api to lookup company location: %w", err)
+	}
+	if resp.IsError() {
+		return "", fmt.Errorf("failed to lookup company location from Notion: %s", resp.String())
+	}
+
+	return respBody.GetCompanyLocation(), nil
+}

@@ -6,7 +6,6 @@ import (
 
 	"github.com/ghazlabs/idn-remote-entry/internal/testutil"
 	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driven/resolver/hqloc"
-	"github.com/go-resty/resty/v2"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/riandyrn/go-env"
@@ -19,9 +18,6 @@ func TestLocate(t *testing.T) {
 	}
 
 	locator, err := hqloc.NewLocator(hqloc.LocatorConfig{
-		HttpClient:    resty.New(),
-		DatabaseID:    env.GetString(testutil.EnvKeyNotionDatabaseID),
-		NotionToken:   env.GetString(testutil.EnvKeyNotionToken),
 		OpenaAiClient: openai.NewClient(option.WithAPIKey(env.GetString(testutil.EnvKeyTestOpenAiKey))),
 	})
 	require.NoError(t, err)

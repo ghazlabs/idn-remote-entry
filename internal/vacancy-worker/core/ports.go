@@ -8,6 +8,7 @@ import (
 
 type Storage interface {
 	Save(ctx context.Context, v shcore.Vacancy) (*shcore.VacancyRecord, error)
+	LookupCompanyLocation(ctx context.Context, companyName string) (string, error)
 }
 
 type VacancyResolver interface {
