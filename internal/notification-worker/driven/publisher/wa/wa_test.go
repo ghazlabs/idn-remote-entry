@@ -13,6 +13,10 @@ import (
 )
 
 func TestNotify(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	p, err := publisher.NewWaPublisher(publisher.WaPublisherConfig{
 		HttpClient:     resty.New(),
 		Username:       env.GetString(testutil.EnvKeyWhatsappApiUser),

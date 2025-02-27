@@ -13,6 +13,10 @@ import (
 )
 
 func TestSaveReallyLongJobDescription(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	s, err := storage.NewNotionStorage(storage.NotionStorageConfig{
 		DatabaseID:  env.GetString(testutil.EnvKeyNotionDatabaseID),
 		NotionToken: env.GetString(testutil.EnvKeyNotionToken),
