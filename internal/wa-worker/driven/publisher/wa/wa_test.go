@@ -1,4 +1,4 @@
-package publisher_test
+package wa_test
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/testutil"
-	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/driven/publisher"
+	publisher "github.com/ghazlabs/idn-remote-entry/internal/wa-worker/driven/publisher/wa"
 	"github.com/go-resty/resty/v2"
 	"github.com/riandyrn/go-env"
 	"github.com/stretchr/testify/require"

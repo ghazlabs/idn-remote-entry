@@ -5,7 +5,7 @@ import (
 
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmq"
 	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/core"
-	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/driven/publisher"
+	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/driven/publisher/wa"
 	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/driver/worker"
 	"github.com/go-resty/resty/v2"
 	"github.com/riandyrn/go-env"
@@ -21,7 +21,7 @@ const (
 
 func main() {
 	// initialize publisher
-	pub, err := publisher.NewWaPublisher(publisher.WaPublisherConfig{
+	pub, err := wa.NewWaPublisher(wa.WaPublisherConfig{
 		HttpClient:   resty.New(),
 		Username:     env.GetString(envKeyWhatsappApiUser),
 		Password:     env.GetString(envKeyWhatsappApiPass),
