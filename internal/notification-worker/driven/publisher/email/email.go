@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/smtp"
+	"strings"
 
 	shcore "github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"gopkg.in/validator.v2"
@@ -40,12 +41,14 @@ Job Title: %s
 Company: %s
 Location: %s
 Description: %s
+Relevant Tags: %s
 URL: %s
 `,
 		notification.VacancyRecord.Vacancy.JobTitle,
 		notification.VacancyRecord.Vacancy.CompanyName,
 		notification.VacancyRecord.Vacancy.CompanyLocation,
 		notification.VacancyRecord.Vacancy.ShortDescription,
+		strings.Join(notification.VacancyRecord.Vacancy.RelevantTags, ", "),
 		notification.VacancyRecord.Vacancy.ApplyURL,
 	)
 
