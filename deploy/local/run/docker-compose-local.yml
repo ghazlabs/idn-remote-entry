@@ -58,7 +58,6 @@ services:
       - STORAGE_TYPE=mysql
       - MYSQL_DSN=root:test1234@tcp(mysql:3306)/jobs?timeout=5s
       - OPENAI_KEY=${IDN_REMOTE_ENTRY_OPENAI_KEY}
-      - WHATSAPP_RECIPIENT_IDS=120363390036841640@newsletter,120363376193442839@g.us # this is dev channel & dev community
       - RABBITMQ_CONN=amqp://guest:guest@rabbitmq:5672/
       - RABBITMQ_WA_QUEUE_NAME=wa_queue
       - RABBITMQ_VACANCY_QUEUE_NAME=vacancy_queue

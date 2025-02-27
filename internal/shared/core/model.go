@@ -18,7 +18,6 @@ type VacancyRecord struct {
 }
 
 type Notification struct {
-	RecipientID string `json:"recipient_id"`
 	VacancyRecord
 }
 

@@ -14,26 +14,28 @@ import (
 )
 
 const (
-	envKeyPublisherType       = "PUBLISHER_TYPE"
-	envKeySmtpHost            = "SMTP_HOST"
-	envKeySmtpPort            = "SMTP_PORT"
-	envKeySmtpFrom            = "SMTP_FROM"
-	envKeySmtpTo              = "SMTP_TO"
-	envKeyWhatsappApiUser     = "WHATSAPP_API_USER"
-	envKeyWhatsappApiPass     = "WHATSAPP_API_PASS"
-	envKeyWhatsappApiBaseUrl  = "WHATSAPP_API_BASE_URL"
-	envKeyRabbitMQConn        = "RABBITMQ_CONN"
-	envKeyRabbitMQWaQueueName = "RABBITMQ_WA_QUEUE_NAME"
+	envKeyPublisherType        = "PUBLISHER_TYPE"
+	envKeySmtpHost             = "SMTP_HOST"
+	envKeySmtpPort             = "SMTP_PORT"
+	envKeySmtpFrom             = "SMTP_FROM"
+	envKeySmtpTo               = "SMTP_TO"
+	envKeyWhatsappApiUser      = "WHATSAPP_API_USER"
+	envKeyWhatsappApiPass      = "WHATSAPP_API_PASS"
+	envKeyWhatsappApiBaseUrl   = "WHATSAPP_API_BASE_URL"
+	envKeyWhatsappRecipientIDs = "WHATSAPP_RECIPIENT_IDS"
+	envKeyRabbitMQConn         = "RABBITMQ_CONN"
+	envKeyRabbitMQWaQueueName  = "RABBITMQ_WA_QUEUE_NAME"
 )
 
 func initPublisher() (core.Publisher, error) {
 	switch env.GetString(envKeyPublisherType) {
 	case "wa":
 		return wa.NewWaPublisher(wa.WaPublisherConfig{
-			HttpClient:   resty.New(),
-			Username:     env.GetString(envKeyWhatsappApiUser),
-			Password:     env.GetString(envKeyWhatsappApiPass),
-			WaApiBaseUrl: env.GetString(envKeyWhatsappApiBaseUrl),
+			HttpClient:     resty.New(),
+			Username:       env.GetString(envKeyWhatsappApiUser),
+			Password:       env.GetString(envKeyWhatsappApiPass),
+			WaApiBaseUrl:   env.GetString(envKeyWhatsappApiBaseUrl),
+			WaRecipientIDs: env.GetStrings(envKeyWhatsappRecipientIDs, ","),
 		})
 	case "email":
 		return email.NewEmailPublisher(email.EmailPublisherConfig{

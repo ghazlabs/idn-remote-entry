@@ -25,20 +25,16 @@ func NewNotifier(cfg NotifierConfig) (*Notifier, error) {
 }
 
 type NotifierConfig struct {
-	RmqPublisher   *rmq.Publisher `validate:"nonnil"`
-	WaRecipientIDs []string       `validate:"nonzero"`
+	RmqPublisher *rmq.Publisher `validate:"nonnil"`
 }
 
 func (n *Notifier) Notify(ctx context.Context, v core.VacancyRecord) error {
-	for _, waID := range n.WaRecipientIDs {
-		ntf := core.Notification{
-			RecipientID:   waID,
-			VacancyRecord: v,
-		}
-		err := n.RmqPublisher.Publish(ctx, ntf)
-		if err != nil {
-			return fmt.Errorf("failed to publish notification %+v: %w", ntf, err)
-		}
+	ntf := core.Notification{
+		VacancyRecord: v,
+	}
+	err := n.RmqPublisher.Publish(ctx, ntf)
+	if err != nil {
+		return fmt.Errorf("failed to publish notification %+v: %w", ntf, err)
 	}
 
 	return nil

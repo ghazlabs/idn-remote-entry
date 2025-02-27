@@ -28,7 +28,6 @@ const (
 	envKeyNotionDatabaseID         = "NOTION_DATABASE_ID"
 	envKeyNotionToken              = "NOTION_TOKEN"
 	envKeyOpenAiKey                = "OPENAI_KEY"
-	envKeyWhatsappRecipientIDs     = "WHATSAPP_RECIPIENT_IDS"
 	envKeyRabbitMQConn             = "RABBITMQ_CONN"
 	envKeyRabbitMQWaQueueName      = "RABBITMQ_WA_QUEUE_NAME"
 	envKeyRabbitMQVacancyQueueName = "RABBITMQ_VACANCY_QUEUE_NAME"
@@ -117,9 +116,8 @@ func main() {
 	defer waRmqPub.Close()
 
 	// initialize notifier
-	waNotf, err := notifier.NewWaNotifier(notifier.WaNotifierConfig{
-		RmqPublisher:   waRmqPub,
-		WaRecipientIDs: env.GetStrings(envKeyWhatsappRecipientIDs, ","),
+	waNotf, err := notifier.NewNotifier(notifier.NotifierConfig{
+		RmqPublisher: waRmqPub,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize notifier: %v", err)
