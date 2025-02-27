@@ -45,10 +45,10 @@ services:
       - RABBITMQ_WA_QUEUE_NAME=wa_queue
       - RABBITMQ_VACANCY_QUEUE_NAME=vacancy_queue
 
-  wa-worker:
+  notification-worker:
     build:
       context: ../../../
-      dockerfile: ./build/package/wa-worker/Dockerfile
+      dockerfile: ./build/package/notification-worker/Dockerfile
     depends_on:
       rabbitmq:
         condition: service_healthy

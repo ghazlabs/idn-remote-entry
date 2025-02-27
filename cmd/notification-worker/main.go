@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/ghazlabs/idn-remote-entry/internal/notification-worker/core"
+	"github.com/ghazlabs/idn-remote-entry/internal/notification-worker/driven/publisher/email"
+	"github.com/ghazlabs/idn-remote-entry/internal/notification-worker/driven/publisher/wa"
+	"github.com/ghazlabs/idn-remote-entry/internal/notification-worker/driver/worker"
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmq"
-	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/core"
-	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/driven/publisher/email"
-	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/driven/publisher/wa"
-	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/driver/worker"
 	"github.com/go-resty/resty/v2"
 	"github.com/riandyrn/go-env"
 )
@@ -82,7 +82,7 @@ func main() {
 	}
 
 	// run worker
-	log.Printf("wa-worker is running...")
+	log.Printf("notification-worker is running...")
 	err = w.Run()
 	if err != nil {
 		log.Fatalf("failed to run worker: %v", err)

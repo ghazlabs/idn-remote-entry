@@ -7,9 +7,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/ghazlabs/idn-remote-entry/internal/notification-worker/core"
 	shcore "github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmq"
-	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/core"
 	"github.com/wagslane/go-rabbitmq"
 	"gopkg.in/validator.v2"
 )
