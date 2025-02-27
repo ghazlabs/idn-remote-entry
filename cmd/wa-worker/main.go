@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmq"
 	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/core"
+	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/driven/publisher/email"
 	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/driven/publisher/wa"
 	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/driver/worker"
 	"github.com/go-resty/resty/v2"
@@ -12,6 +14,11 @@ import (
 )
 
 const (
+	envKeyPublisherType       = "PUBLISHER_TYPE"
+	envKeySmtpHost            = "SMTP_HOST"
+	envKeySmtpPort            = "SMTP_PORT"
+	envKeySmtpFrom            = "SMTP_FROM"
+	envKeySmtpTo              = "SMTP_TO"
 	envKeyWhatsappApiUser     = "WHATSAPP_API_USER"
 	envKeyWhatsappApiPass     = "WHATSAPP_API_PASS"
 	envKeyWhatsappApiBaseUrl  = "WHATSAPP_API_BASE_URL"
@@ -19,14 +26,30 @@ const (
 	envKeyRabbitMQWaQueueName = "RABBITMQ_WA_QUEUE_NAME"
 )
 
+func initPublisher() (core.Publisher, error) {
+	switch env.GetString(envKeyPublisherType) {
+	case "wa":
+		return wa.NewWaPublisher(wa.WaPublisherConfig{
+			HttpClient:   resty.New(),
+			Username:     env.GetString(envKeyWhatsappApiUser),
+			Password:     env.GetString(envKeyWhatsappApiPass),
+			WaApiBaseUrl: env.GetString(envKeyWhatsappApiBaseUrl),
+		})
+	case "email":
+		return email.NewEmailPublisher(email.EmailPublisherConfig{
+			Host: env.GetString(envKeySmtpHost),
+			Port: env.GetInt(envKeySmtpPort),
+			From: env.GetString(envKeySmtpFrom),
+			To:   env.GetString(envKeySmtpTo),
+		})
+	default:
+		return nil, fmt.Errorf("invalid publisher type: %s", env.GetString(envKeyPublisherType))
+	}
+}
+
 func main() {
 	// initialize publisher
-	pub, err := wa.NewWaPublisher(wa.WaPublisherConfig{
-		HttpClient:   resty.New(),
-		Username:     env.GetString(envKeyWhatsappApiUser),
-		Password:     env.GetString(envKeyWhatsappApiPass),
-		WaApiBaseUrl: env.GetString(envKeyWhatsappApiBaseUrl),
-	})
+	pub, err := initPublisher()
 	if err != nil {
 		log.Fatalf("failed to initialize publisher: %v", err)
 	}
