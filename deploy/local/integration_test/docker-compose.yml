@@ -12,6 +12,15 @@ services:
     volumes:
       - ../../../docs/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
 
+  mailpit:
+    image: axllent/mailpit:v1.12
+    ports:
+      - "8025:8025"  # Web UI
+      - "1025:1025"  # SMTP port
+    environment:
+      - MP_SMTP_AUTH_ACCEPT_ANY=1
+      - MP_SMTP_AUTH_ALLOW_INSECURE=1
+
   integration-test:
     build:
       context: ../../../
@@ -19,6 +28,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     environment:
       - TEST_OPENAI_KEY=${IDN_REMOTE_ENTRY_OPENAI_KEY}
       - TEST_WHATSAPP_API_USER=${GHAZLABS_WA_SERVER_USER}
@@ -28,6 +39,8 @@ services:
       - TEST_NOTION_DATABASE_ID=${IDN_REMOTE_ENTRY_NOTION_DATABASE_ID_DEV} # this is dev table
       - TEST_NOTION_TOKEN=${IDN_REMOTE_ENTRY_NOTION_TOKEN}
       - TEST_MYSQL_DSN=root:test1234@tcp(mysql:3306)/jobs?timeout=5s
+      - TEST_SMTP_HOST=mailpit
+      - TEST_SMTP_PORT=1025
     entrypoint: "go test -timeout=3m -short ./..."
     volumes:
       - ../../../internal:/go/src/github.com/ghazlabs/idn-remote-entry/internal
