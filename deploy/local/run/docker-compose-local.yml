@@ -1,0 +1,81 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4.0.5-management
+    ports:
+      - "15672:15672"  # Management web UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest 
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  mysql:
+    image: bitnami/mysql:8.0
+    healthcheck:
+      test: "mysql --user=root --password=test1234 --execute \"SHOW DATABASES;\""
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    ports:
+      - 8306:3306
+    volumes:
+      - ../../../docs/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    environment:
+      - MYSQL_ROOT_PASSWORD=test1234
+      - MYSQL_DATABASE=jobs
+
+  server:
+    build:
+      context: ../../../
+      dockerfile: ./build/package/server/Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - LISTEN_PORT=9864
+      - CLIENT_API_KEY=d2e97dca-1131-4344-af0a-b3406e7ecb06
+      - RABBITMQ_CONN=amqp://guest:guest@rabbitmq:5672/
+      - RABBITMQ_VACANCY_QUEUE_NAME=vacancy_queue
+    ports:
+      - "9864:9864"
+
+  vacancy-worker:
+    build:
+      context: ../../../
+      dockerfile: ./build/package/vacancy-worker/Dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - STORAGE_TYPE=mysql
+      - MYSQL_DSN=root:test1234@tcp(mysql:3306)/jobs?timeout=5s
+      - OPENAI_KEY=${IDN_REMOTE_ENTRY_OPENAI_KEY}
+      - WHATSAPP_RECIPIENT_IDS=120363390036841640@newsletter,120363376193442839@g.us # this is dev channel & dev community
+      - RABBITMQ_CONN=amqp://guest:guest@rabbitmq:5672/
+      - RABBITMQ_WA_QUEUE_NAME=wa_queue
+      - RABBITMQ_VACANCY_QUEUE_NAME=vacancy_queue
+
+  wa-worker:
+    build:
+      context: ../../../
+      dockerfile: ./build/package/wa-worker/Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - WHATSAPP_API_USER=${GHAZLABS_WA_SERVER_USER}
+      - WHATSAPP_API_PASS=${GHAZLABS_WA_SERVER_PASS}
+      - WHATSAPP_API_BASE_URL=${GHAZLABS_WA_SERVER_URL}
+      - RABBITMQ_CONN=amqp://guest:guest@rabbitmq:5672/
+      - RABBITMQ_WA_QUEUE_NAME=wa_queue
+
+volumes:
+  rabbitmq_data:
