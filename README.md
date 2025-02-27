@@ -9,3 +9,17 @@ Checkout the REST API documentation for this system [here](./docs/rest_api.md).
 Below is the business logic for this system:
 
 ![Business Logic](./docs/business-logic.drawio.svg)
+
+Below are the high-level architecture of this system:
+
+![High Level Architecture](./docs/architecture.drawio.svg)
+
+## Getting Started
+
+To run this project locally, make sure you have Docker installed on your local machine. Then run the following command:
+
+```bash
+make run
+```
+
+> Caution: This command will start download 5.5GB of LLM model, make sure you have enough disk space.
