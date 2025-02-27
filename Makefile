@@ -5,11 +5,13 @@ test:
 	docker compose -f ./deploy/local/integration_test/docker-compose.yml up --build --exit-code-from=integration-test
 
 run:
-	-make stop
-	docker compose -f ./deploy/local/run/docker-compose.yml up --build --attach=server --attach=wa-worker --attach=vacancy-worker
+	-docker compose -f ./deploy/local/run/docker-compose-local.yml down --remove-orphans
+	docker compose -f ./deploy/local/run/docker-compose-local.yml up --build --attach=server --attach=wa-worker --attach=vacancy-worker
 
-stop:
-	docker compose -f ./deploy/local/run/docker-compose.yml down --remove-orphans
+# command for internal
+run-internal:
+	-docker compose -f ./deploy/local/run/docker-compose.yml down --remove-orphans
+	docker compose -f ./deploy/local/run/docker-compose.yml up --build --attach=server --attach=wa-worker --attach=vacancy-worker
 
 ## command for Batha server which run old AMI Linux version. In there there is no "docker compose".
 deploy-ec2:
