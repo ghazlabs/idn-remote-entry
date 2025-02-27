@@ -1,18 +1,22 @@
 .PHONY: *
 
-test:
-	docker compose -f ./deploy/local/integration_test/docker-compose.yml down --remove-orphans
-	docker compose -f ./deploy/local/integration_test/docker-compose.yml up --build --exit-code-from=integration-test
-
 ollama-model:
 	-docker compose -f ./deploy/local/run/docker-compose-ollama.yml down --remove-orphans
 	docker compose -f ./deploy/local/run/docker-compose-ollama.yml up --build --attach=ollama-puller
+
+test: ollama-model
+	docker compose -f ./deploy/local/integration_test/docker-compose-local.yml down --remove-orphans
+	docker compose -f ./deploy/local/integration_test/docker-compose-local.yml up --build --exit-code-from=integration-test
 
 run: ollama-model
 	-docker compose -f ./deploy/local/run/docker-compose-local.yml down --remove-orphans
 	docker compose -f ./deploy/local/run/docker-compose-local.yml up --build --attach=server --attach=notification-worker --attach=vacancy-worker
 
 # command for internal
+test-internal:
+	docker compose -f ./deploy/local/integration_test/docker-compose.yml down --remove-orphans
+	docker compose -f ./deploy/local/integration_test/docker-compose.yml up --build --exit-code-from=integration-test
+
 run-internal:
 	-docker compose -f ./deploy/local/run/docker-compose.yml down --remove-orphans
 	docker compose -f ./deploy/local/run/docker-compose.yml up --build --attach=server --attach=notification-worker --attach=vacancy-worker

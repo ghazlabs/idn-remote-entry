@@ -1,42 +1,8 @@
 services:
-  mysql:
-    image: bitnami/mysql:8.0
-    healthcheck:
-      test: "mysql --user=root --password=test1234 --execute \"SHOW DATABASES;\""
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    environment:
-      - MYSQL_ROOT_PASSWORD=test1234
-      - MYSQL_DATABASE=jobs
-    volumes:
-      - ../../../docs/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
-
-  mailpit:
-    image: axllent/mailpit:v1.12
-    ports:
-      - "8025:8025"  # Web UI
-      - "1025:1025"  # SMTP port
-    environment:
-      - MP_SMTP_AUTH_ACCEPT_ANY=1
-      - MP_SMTP_AUTH_ALLOW_INSECURE=1
-
-  ollama:
-    image: ollama/ollama:0.5.12
-    ports:
-      - "11434:11434"
-    volumes:
-      - ../../../models:/root/.ollama/models
-
   integration-test:
     build:
       context: ../../../
       dockerfile: ./build/package/integration_test/Dockerfile
-    depends_on:
-      mysql:
-        condition: service_healthy
-      mailpit:
-        condition: service_started
     environment:
       - TEST_OPENAI_KEY=${IDN_REMOTE_ENTRY_OPENAI_KEY}
       - TEST_WHATSAPP_API_USER=${GHAZLABS_WA_SERVER_USER}
@@ -45,11 +11,6 @@ services:
       - TEST_WHATSAPP_API_BASE_URL=${GHAZLABS_WA_SERVER_URL}
       - TEST_NOTION_DATABASE_ID=${IDN_REMOTE_ENTRY_NOTION_DATABASE_ID_DEV} # this is dev table
       - TEST_NOTION_TOKEN=${IDN_REMOTE_ENTRY_NOTION_TOKEN}
-      - TEST_MYSQL_DSN=root:test1234@tcp(mysql:3306)/jobs?timeout=5s
-      - TEST_SMTP_HOST=mailpit
-      - TEST_SMTP_PORT=1025
-      - TEST_OLLLAMA_BASE_URL=http://ollama:11434/v1/
-      - TEST_OLLLAMA_MODEL=minicpm-v:8b
-    entrypoint: "go test -timeout=3m -short ./..."
+    entrypoint: "go test -timeout=3m ./..."
     volumes:
       - ../../../internal:/go/src/github.com/ghazlabs/idn-remote-entry/internal
