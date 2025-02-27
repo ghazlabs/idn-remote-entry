@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"gopkg.in/validator.v2"
@@ -71,4 +72,21 @@ func (s *MySQLStorage) Save(ctx context.Context, v core.Vacancy) (*core.VacancyR
 	}
 
 	return rec, nil
+}
+
+func (s *MySQLStorage) LookupCompanyLocation(ctx context.Context, companyName string) (string, error) {
+	query := `
+		SELECT company_location FROM vacancies WHERE company_name = ? LIMIT 1
+	`
+	var location string
+	if err := s.DB.QueryRowContext(ctx, query, companyName).Scan(&location); err != nil {
+		return "", fmt.Errorf("failed to lookup company location: %w", err)
+	}
+
+	lowerLocation := strings.ToLower(location)
+	if strings.Contains(lowerLocation, "remote") || strings.Contains(lowerLocation, "global") {
+		return "", nil
+	}
+
+	return location, nil
 }
