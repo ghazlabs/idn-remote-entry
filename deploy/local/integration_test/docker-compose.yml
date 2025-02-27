@@ -1,8 +1,24 @@
 services:
+  mysql:
+    image: bitnami/mysql:8.0
+    healthcheck:
+      test: "mysql --user=root --password=test1234 --execute \"SHOW DATABASES;\""
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      - MYSQL_ROOT_PASSWORD=test1234
+      - MYSQL_DATABASE=jobs
+    volumes:
+      - ../../../docs/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+
   integration-test:
     build:
       context: ../../../
       dockerfile: ./build/package/integration_test/Dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
     environment:
       - TEST_OPENAI_KEY=${IDN_REMOTE_ENTRY_OPENAI_KEY}
       - TEST_WHATSAPP_API_USER=${GHAZLABS_WA_SERVER_USER}
@@ -11,6 +27,7 @@ services:
       - TEST_WHATSAPP_API_BASE_URL=${GHAZLABS_WA_SERVER_URL}
       - TEST_NOTION_DATABASE_ID=${IDN_REMOTE_ENTRY_NOTION_DATABASE_ID_DEV} # this is dev table
       - TEST_NOTION_TOKEN=${IDN_REMOTE_ENTRY_NOTION_TOKEN}
+      - TEST_MYSQL_DSN=root:test1234@tcp(mysql:3306)/jobs?timeout=5s
     entrypoint: "go test -timeout=3m -short ./..."
     volumes:
       - ../../../internal:/go/src/github.com/ghazlabs/idn-remote-entry/internal

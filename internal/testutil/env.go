@@ -8,4 +8,5 @@ const (
 	EnvKeyWhatsappApiBaseUrl   = "TEST_WHATSAPP_API_BASE_URL"
 	EnvKeyNotionToken          = "TEST_NOTION_TOKEN"
 	EnvKeyNotionDatabaseID     = "TEST_NOTION_DATABASE_ID"
+	EnvKeyMysqlDsn             = "TEST_MYSQL_DSN"
 )
