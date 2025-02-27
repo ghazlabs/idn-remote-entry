@@ -32,7 +32,7 @@ type WaPublisherConfig struct {
 	WaApiBaseUrl string        `validate:"nonzero"`
 }
 
-func (n *WaPublisher) Publish(ctx context.Context, ntf core.WaNotification) error {
+func (n *WaPublisher) Publish(ctx context.Context, ntf core.Notification) error {
 	// send notification to whatsapp using Ghazlabs Whatsapp API
 	resp, err := n.HttpClient.R().
 		SetContext(ctx).

@@ -17,12 +17,12 @@ type VacancyRecord struct {
 	Vacancy
 }
 
-type WaNotification struct {
+type Notification struct {
 	RecipientID string `json:"recipient_id"`
 	VacancyRecord
 }
 
-func (v WaNotification) ToJSON() []byte {
+func (v Notification) ToJSON() []byte {
 	data, _ := json.Marshal(v)
 	return data
 }

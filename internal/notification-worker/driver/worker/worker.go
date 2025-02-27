@@ -38,7 +38,7 @@ func (w *Worker) Run() error {
 	// run the consumer
 	err := w.RmqConsumer.Run(func(d rabbitmq.Delivery) rabbitmq.Action {
 		// parse the message
-		var n shcore.WaNotification
+		var n shcore.Notification
 		err := json.Unmarshal(d.Body, &n)
 		if err != nil {
 			// discard the message if failed to parse

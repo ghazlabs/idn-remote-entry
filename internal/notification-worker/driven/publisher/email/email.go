@@ -31,7 +31,7 @@ func NewEmailPublisher(config EmailPublisherConfig) (*EmailPublisher, error) {
 	}, nil
 }
 
-func (p *EmailPublisher) Publish(ctx context.Context, notification shcore.WaNotification) error {
+func (p *EmailPublisher) Publish(ctx context.Context, notification shcore.Notification) error {
 	addr := fmt.Sprintf("%s:%d", p.Host, p.Port)
 
 	subject := "New Job Vacancy Notification"
