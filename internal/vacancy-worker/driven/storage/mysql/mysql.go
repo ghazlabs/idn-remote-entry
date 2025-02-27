@@ -79,7 +79,11 @@ func (s *MySQLStorage) LookupCompanyLocation(ctx context.Context, companyName st
 		SELECT company_location FROM vacancies WHERE company_name = ? LIMIT 1
 	`
 	var location string
-	if err := s.DB.QueryRowContext(ctx, query, companyName).Scan(&location); err != nil {
+	err := s.DB.QueryRowContext(ctx, query, companyName).Scan(&location)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
 		return "", fmt.Errorf("failed to lookup company location: %w", err)
 	}
 
