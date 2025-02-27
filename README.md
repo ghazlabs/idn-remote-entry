@@ -22,4 +22,4 @@ To run this project locally, make sure you have Docker installed on your local m
 make run
 ```
 
-> Caution: This command will start download 5.5GB of LLM model, make sure you have enough disk space.
+> Caution: This command will start download `minicpm-v:8b` 5.5GB of Ollama model, make sure you have enough disk space and RAM to run.
