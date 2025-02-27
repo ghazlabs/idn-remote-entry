@@ -1,0 +1,11 @@
+services:
+  ollama:
+    image: ollama/ollama:0.5.12
+    volumes:
+      - ../../../models:/root/.ollama/models
+
+  ollama-puller:
+    image: curlimages/curl:8.12.1
+    depends_on:
+      - ollama
+    command: "curl -X POST -s -d '{\"name\":\"moondream:1.8b\"}' http://ollama:11434/api/pull"
