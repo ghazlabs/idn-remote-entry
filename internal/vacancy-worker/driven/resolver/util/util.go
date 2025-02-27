@@ -27,6 +27,7 @@ func GenerateSchema[T any]() interface{} {
 func CallOpenAI[T any](
 	ctx context.Context,
 	client *openai.Client,
+	model string,
 	msgs []openai.ChatCompletionMessageParamUnion,
 ) (*T, error) {
 	// generate schema for the structured output
@@ -47,7 +48,7 @@ func CallOpenAI[T any](
 			},
 		),
 		Temperature: openai.Float(0.0),
-		Model:       openai.String(openai.ChatModelGPT4o2024_08_06),
+		Model:       openai.String(model),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call the OpenAI API: %w", err)

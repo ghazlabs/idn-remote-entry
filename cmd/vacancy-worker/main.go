@@ -27,7 +27,9 @@ const (
 	envKeyMysqlDSN                 = "MYSQL_DSN"
 	envKeyNotionDatabaseID         = "NOTION_DATABASE_ID"
 	envKeyNotionToken              = "NOTION_TOKEN"
+	envKeyModelLLM                 = "MODEL_LLM"
 	envKeyOpenAiKey                = "OPENAI_KEY"
+	envKeyOllamaBaseUrl            = "OLLAMA_BASE_URL"
 	envKeyRabbitMQConn             = "RABBITMQ_CONN"
 	envKeyRabbitMQWaQueueName      = "RABBITMQ_WA_QUEUE_NAME"
 	envKeyRabbitMQVacancyQueueName = "RABBITMQ_VACANCY_QUEUE_NAME"
@@ -62,18 +64,35 @@ func main() {
 		log.Fatalf("failed to initialize storage: %v", err)
 	}
 
+	// initialize llm provider
+	ollamaBaseURL := env.GetString(envKeyOllamaBaseUrl)
+	modelLLM := env.GetString(envKeyModelLLM)
+	if modelLLM == "" {
+		modelLLM = openai.ChatModelGPT4o2024_08_06
+	}
+
+	openAiOptions := []option.RequestOption{}
+	if ollamaBaseURL != "" {
+		openAiOptions = append(openAiOptions, option.WithBaseURL(ollamaBaseURL))
+	} else {
+		// default to OpenAI
+		openAiOptions = append(openAiOptions, option.WithAPIKey(env.GetString(envKeyOpenAiKey)))
+	}
+	openAiClient := openai.NewClient(openAiOptions...)
+
 	// initialize parser
 	httpClient := resty.New()
-	openAiClient := openai.NewClient(option.WithAPIKey(env.GetString(envKeyOpenAiKey)))
 	textParser, err := parser.NewGreenhouseParser(parser.GreenhouseParserConfig{
 		HttpClient:    httpClient,
 		OpenaAiClient: openAiClient,
+		ModelLLM:      modelLLM,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize text parser: %v", err)
 	}
 	ocrParser, err := parser.NewOCRParser(parser.OCRParserConfig{
 		OpenaAiClient: openAiClient,
+		ModelLLM:      modelLLM,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize OCR parser: %v", err)
@@ -81,8 +100,9 @@ func main() {
 
 	// initialize locator
 	locator, err := hqloc.NewLocator(hqloc.LocatorConfig{
-		OpenaAiClient: openAiClient,
 		Storage:       strg,
+		ModelLLM:      modelLLM,
+		OpenaAiClient: openAiClient,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize locator: %v", err)
