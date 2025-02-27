@@ -21,6 +21,13 @@ services:
       - MP_SMTP_AUTH_ACCEPT_ANY=1
       - MP_SMTP_AUTH_ALLOW_INSECURE=1
 
+  ollama:
+    image: ollama/ollama:0.5.12
+    ports:
+      - "11434:11434"
+    volumes:
+      - ../../../models:/root/.ollama/models
+
   integration-test:
     build:
       context: ../../../
@@ -41,6 +48,8 @@ services:
       - TEST_MYSQL_DSN=root:test1234@tcp(mysql:3306)/jobs?timeout=5s
       - TEST_SMTP_HOST=mailpit
       - TEST_SMTP_PORT=1025
+      - TEST_OLLLAMA_BASE_URL=http://ollama:11434/v1/
+      - TEST_OLLLAMA_MODEL=minicpm-v:8b
     entrypoint: "go test -timeout=3m -short ./..."
     volumes:
       - ../../../internal:/go/src/github.com/ghazlabs/idn-remote-entry/internal

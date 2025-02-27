@@ -8,7 +8,10 @@ const (
 	EnvKeyWhatsappApiBaseUrl   = "TEST_WHATSAPP_API_BASE_URL"
 	EnvKeyNotionToken          = "TEST_NOTION_TOKEN"
 	EnvKeyNotionDatabaseID     = "TEST_NOTION_DATABASE_ID"
-	EnvKeyMysqlDsn             = "TEST_MYSQL_DSN"
-	EnvKeySMTPHost             = "TEST_SMTP_HOST"
-	EnvKeySMTPPort             = "TEST_SMTP_PORT"
+
+	EnvKeyMysqlDsn      = "TEST_MYSQL_DSN"
+	EnvKeySMTPHost      = "TEST_SMTP_HOST"
+	EnvKeySMTPPort      = "TEST_SMTP_PORT"
+	EnvKeyOllamaBaseUrl = "TEST_OLLLAMA_BASE_URL"
+	EnvKeyOllamaModel   = "TEST_OLLLAMA_MODEL"
 )

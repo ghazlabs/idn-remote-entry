@@ -69,3 +69,45 @@ func TestLocate(t *testing.T) {
 		})
 	}
 }
+
+func TestLocateWithOllama(t *testing.T) {
+	ollamaBaseUrl := env.GetString(testutil.EnvKeyOllamaBaseUrl)
+	if ollamaBaseUrl == "" {
+		t.Skip("skip test because Ollama base URL is not set")
+	}
+
+	testCases := []struct {
+		Name                  string
+		CompanyName           string
+		CompanyLocFromStorage string
+		ExpCompanyLocation    string
+	}{
+		{
+			Name:               "Return from Ollama",
+			CompanyName:        "Haraj",
+			ExpCompanyLocation: "Riyadh",
+		},
+		{
+			Name:                  "Return from storage",
+			CompanyName:           "Fingerprint",
+			CompanyLocFromStorage: "Chicago, United States",
+			ExpCompanyLocation:    "Chicago, United States",
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			mockStorage := &mockStorage{
+				companyLocation: testCase.CompanyLocFromStorage,
+			}
+			locator, err := hqloc.NewLocator(hqloc.LocatorConfig{
+				Storage:       mockStorage,
+				ModelLLM:      env.GetString(testutil.EnvKeyOllamaModel),
+				OpenaAiClient: openai.NewClient(option.WithBaseURL(ollamaBaseUrl)),
+			})
+
+			loc, err := locator.Locate(context.Background(), testCase.CompanyName)
+			require.NoError(t, err)
+			require.Contains(t, loc, testCase.ExpCompanyLocation)
+		})
+	}
+}
