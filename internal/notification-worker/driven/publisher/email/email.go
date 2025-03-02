@@ -1,3 +1,6 @@
+// Package email provides a simple email publisher implementation for sending job vacancy notifications.
+// This package is intended for local deployment and testing purposes only, and is not suitable for production use.
+
 package email
 
 import (

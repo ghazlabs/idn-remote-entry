@@ -1,3 +1,6 @@
+// Package jsonl provides a simple JSONL (JSON Lines) storage implementation for managing vacancy records.
+// This package is intended for local deployment and testing purposes only, and is not suitable for production use.
+
 package jsonl
 
 import (
