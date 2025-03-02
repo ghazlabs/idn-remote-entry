@@ -33,7 +33,6 @@ func TestLocate(t *testing.T) {
 	mockStorage := &mockStorage{}
 	locator, err := hqloc.NewLocator(hqloc.LocatorConfig{
 		Storage:       mockStorage,
-		ModelLLM:      openai.ChatModelGPT4o2024_08_06,
 		OpenaAiClient: openai.NewClient(option.WithAPIKey(env.GetString(testutil.EnvKeyTestOpenAiKey))),
 	})
 	require.NoError(t, err)
