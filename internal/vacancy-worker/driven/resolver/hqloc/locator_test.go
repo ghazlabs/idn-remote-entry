@@ -26,40 +26,44 @@ func (m *mockStorage) Save(ctx context.Context, v core.Vacancy) (*core.VacancyRe
 }
 
 func TestLocate(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
-
-	mockStorage := &mockStorage{}
-	locator, err := hqloc.NewLocator(hqloc.LocatorConfig{
-		Storage:       mockStorage,
-		OpenaAiClient: openai.NewClient(option.WithAPIKey(env.GetString(testutil.EnvKeyTestOpenAiKey))),
-	})
-	require.NoError(t, err)
-
-	testCases := []struct {
+	type testCase struct {
+		Name                  string
 		CompanyName           string
 		CompanyLocFromStorage string
 		ExpCompanyLocation    string
-	}{
+	}
+	testCases := []testCase{
 		{
-			CompanyName:        "Automattic",
-			ExpCompanyLocation: "San Francisco, United States",
-		},
-		{
-			CompanyName:        "Haraj",
-			ExpCompanyLocation: "Riyadh, Saudi Arabia",
-		},
-		{
+			Name:                  "Return from storage",
 			CompanyName:           "Fingerprint",
 			CompanyLocFromStorage: "Chicago, United States",
 			ExpCompanyLocation:    "Chicago, United States",
 		},
 	}
+
+	openaiKey := env.GetString(testutil.EnvKeyTestOpenAiKey)
+	if !testing.Short() && openaiKey != "" {
+		// test with using OpenAI API
+		testCases = append(testCases, testCase{
+			Name:               "Return from OpenAI",
+			CompanyName:        "Haraj",
+			ExpCompanyLocation: "Riyadh, Saudi Arabia",
+		})
+	}
+
+	mockStorage := &mockStorage{}
+	locator, err := hqloc.NewLocator(hqloc.LocatorConfig{
+		Storage:       mockStorage,
+		OpenaAiClient: openai.NewClient(option.WithAPIKey(openaiKey)),
+	})
+	require.NoError(t, err)
+
 	for _, testCase := range testCases {
-		t.Run(testCase.CompanyName, func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			if testCase.CompanyLocFromStorage != "" {
 				mockStorage.companyLocation = testCase.CompanyLocFromStorage
+			} else {
+				mockStorage.companyLocation = ""
 			}
 
 			loc, err := locator.Locate(context.Background(), testCase.CompanyName)
