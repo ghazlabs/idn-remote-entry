@@ -4,8 +4,6 @@ This system handles submissions from the [Submit Remote Job for Indonesian Talen
 
 We opted to use Google Forms instead of creating a custom web app because it is much easier to set up and comes with built-in Google authentication. Since our primary goal is to simplify the process for the community to submit remote vacancies, this setup should be sufficient.
 
-Checkout the REST API documentation for this system [here](./docs/rest_api.md).
-
 Below is the business logic for this system:
 
 ![Business Logic](./docs/business-logic.drawio.svg)
@@ -27,7 +25,13 @@ In production, we use Notion as storage and Whatsapp as channel. However in loca
 
 ## Getting Started
 
-To run this project locally, make sure you have Docker installed on your local machine. Then run the following command:
+Before running this project, make sure you have Docker installed on your local machine and you need to set your own OpenAI API key as an environment variable. You can do this by running the following command:
+
+```bash
+export IDN_REMOTE_ENTRY_OPENAI_KEY=your_client_api_key
+```
+
+Then run the following command:
 
 ```bash
 make run
@@ -35,8 +39,19 @@ make run
 
 The server will start running on `http://localhost:9864`.
 
-> ⚠️ Caution:
+Try to submit a url vacancy to the server by running the following command:
+
+```bash
+curl -X POST http://localhost:9864/vacancies \
+  -H 'x-api-key: d2e97dca-1131-4344-af0a-b3406e7ecb06' \
+  -d '{"submission_type": "url", "apply_url": "URL_VACANCY"}'
+```
+
+> Note:
 >
-> This command will start download `minicpm-v:8b` 5.5GB of Ollama model, make sure you have enough disk space and RAM to run.
->
-> The reason why we use `minicpm-v:8b` is because its smaller model that capable to extract text information and process OCR on web screenshot.
+> Replace `URL_VACANCY` with the actual url vacancy.
+> `x-api-key` is the api key to access the server you can find it in the [docker-compose](./deploy/local/run/docker-compose-local.yml) file.
+
+To check the result of the submission access on this url `http://localhost:8025`.
+
+For more detail checkout the REST API documentation for this system [here](./docs/rest_api.md).
