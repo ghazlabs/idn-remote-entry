@@ -69,12 +69,5 @@ services:
       - MP_SMTP_AUTH_ACCEPT_ANY=1
       - MP_SMTP_AUTH_ALLOW_INSECURE=1
 
-  ollama:
-    image: ollama/ollama:0.5.12
-    ports:
-      - "11434:11434"
-    volumes:
-      - ../../../models:/root/.ollama/models
-
 volumes:
   rabbitmq_data:
