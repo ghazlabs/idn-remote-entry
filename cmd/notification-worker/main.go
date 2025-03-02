@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/notification-worker/core"
@@ -29,14 +28,6 @@ const (
 
 func initPublisher() (core.Publisher, error) {
 	switch env.GetString(envKeyPublisherType) {
-	case "wa":
-		return wa.NewWaPublisher(wa.WaPublisherConfig{
-			HttpClient:     resty.New(),
-			Username:       env.GetString(envKeyWhatsappApiUser),
-			Password:       env.GetString(envKeyWhatsappApiPass),
-			WaApiBaseUrl:   env.GetString(envKeyWhatsappApiBaseUrl),
-			WaRecipientIDs: env.GetStrings(envKeyWhatsappRecipientIDs, ","),
-		})
 	case "email":
 		return email.NewEmailPublisher(email.EmailPublisherConfig{
 			Host: env.GetString(envKeySmtpHost),
@@ -44,8 +35,14 @@ func initPublisher() (core.Publisher, error) {
 			From: env.GetString(envKeySmtpFrom),
 			To:   env.GetString(envKeySmtpTo),
 		})
-	default:
-		return nil, fmt.Errorf("invalid publisher type: %s", env.GetString(envKeyPublisherType))
+	default: // wa
+		return wa.NewWaPublisher(wa.WaPublisherConfig{
+			HttpClient:     resty.New(),
+			Username:       env.GetString(envKeyWhatsappApiUser),
+			Password:       env.GetString(envKeyWhatsappApiPass),
+			WaApiBaseUrl:   env.GetString(envKeyWhatsappApiBaseUrl),
+			WaRecipientIDs: env.GetStrings(envKeyWhatsappRecipientIDs, ","),
+		})
 	}
 }
 
