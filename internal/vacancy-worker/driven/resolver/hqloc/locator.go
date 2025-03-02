@@ -27,7 +27,6 @@ func NewLocator(cfg LocatorConfig) (*Locator, error) {
 
 type LocatorConfig struct {
 	Storage       core.Storage   `validate:"nonnil"`
-	ModelLLM      string         `validate:"nonzero"`
 	OpenaAiClient *openai.Client `validate:"nonnil"`
 }
 
@@ -65,7 +64,7 @@ func (l *Locator) lookupToWeb(ctx context.Context, companyName string) (string, 
 
 func (l *Locator) doOCR(ctx context.Context, buf []byte) (string, error) {
 	// call the OpenAI API to parse the vacancy information
-	compLoc, err := util.CallOpenAI[companyLocation](ctx, l.OpenaAiClient, l.ModelLLM, []openai.ChatCompletionMessageParamUnion{
+	compLoc, err := util.CallOpenAI[companyLocation](ctx, l.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{
 		openai.SystemMessage("You will be given screenshot of search result for company HQ location parse the company HQ location from it."),
 		openai.UserMessageParts(openai.ImagePart(fmt.Sprintf("data:image/png;base64,%s", base64.StdEncoding.EncodeToString(buf)))),
 	})

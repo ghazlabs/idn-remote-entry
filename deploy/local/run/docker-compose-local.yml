@@ -38,8 +38,7 @@ services:
         condition: service_healthy
     environment:
       - STORAGE_TYPE=jsonl
-      - MODEL_LLM=minicpm-v:8b
-      - OLLAMA_BASE_URL=http://ollama:11434/v1/
+      - OPENAI_KEY=${IDN_REMOTE_ENTRY_OPENAI_KEY}
       - RABBITMQ_CONN=amqp://guest:guest@rabbitmq:5672/
       - RABBITMQ_WA_QUEUE_NAME=wa_queue
       - RABBITMQ_VACANCY_QUEUE_NAME=vacancy_queue

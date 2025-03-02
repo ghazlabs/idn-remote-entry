@@ -22,7 +22,6 @@ type GreenhouseParser struct {
 type GreenhouseParserConfig struct {
 	HttpClient    *resty.Client  `validate:"nonnil"`
 	OpenaAiClient *openai.Client `validate:"nonnil"`
-	ModelLLM      string         `validate:"nonzero"`
 }
 
 func NewGreenhouseParser(cfg GreenhouseParserConfig) (*GreenhouseParser, error) {
@@ -41,7 +40,7 @@ func (p *GreenhouseParser) Parse(ctx context.Context, url string) (*core.Vacancy
 	}
 
 	// call the OpenAI API to parse the vacancy information
-	vacInfo, err := util.CallOpenAI[resolver.VacancyInfo](ctx, p.OpenaAiClient, p.ModelLLM, []openai.ChatCompletionMessageParamUnion{
+	vacInfo, err := util.CallOpenAI[resolver.VacancyInfo](ctx, p.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{
 		openai.SystemMessage("I will give you unstructured text content of a remote vacancy, and you need to parse information from this text. Also please provide the company HQ location based on what you know."),
 		openai.UserMessage(text),
 	})

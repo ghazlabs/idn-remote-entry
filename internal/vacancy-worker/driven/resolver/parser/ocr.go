@@ -17,7 +17,6 @@ type OCRParser struct {
 }
 
 type OCRParserConfig struct {
-	ModelLLM      string         `validate:"nonzero"`
 	OpenaAiClient *openai.Client `validate:"nonnil"`
 }
 
@@ -48,7 +47,7 @@ func (p *OCRParser) Parse(ctx context.Context, url string) (*core.Vacancy, error
 
 func (p *OCRParser) doOCR(ctx context.Context, buf []byte, url string) (*core.Vacancy, error) {
 	// call the OpenAI API to parse the vacancy information
-	vacInfo, err := util.CallOpenAI[resolver.VacancyInfo](ctx, p.OpenaAiClient, p.ModelLLM, []openai.ChatCompletionMessageParamUnion{
+	vacInfo, err := util.CallOpenAI[resolver.VacancyInfo](ctx, p.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{
 		openai.SystemMessage("You will be given vacancy description from the image and you need to parse the information from it."),
 		openai.UserMessageParts(openai.ImagePart(fmt.Sprintf("data:image/png;base64,%s", base64.StdEncoding.EncodeToString(buf)))),
 	})
