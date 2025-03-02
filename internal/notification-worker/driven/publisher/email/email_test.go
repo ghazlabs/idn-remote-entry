@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEmailPublisher_Publish(t *testing.T) {
+func TestEmailPublisherPublish(t *testing.T) {
 	publisher, err := NewEmailPublisher(EmailPublisherConfig{
 		Host: env.GetString(testutil.EnvKeySMTPHost),
 		Port: env.GetInt(testutil.EnvKeySMTPPort),
