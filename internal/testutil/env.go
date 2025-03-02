@@ -9,7 +9,6 @@ const (
 	EnvKeyNotionToken          = "TEST_NOTION_TOKEN"
 	EnvKeyNotionDatabaseID     = "TEST_NOTION_DATABASE_ID"
 
-	EnvKeyMysqlDsn      = "TEST_MYSQL_DSN"
 	EnvKeySMTPHost      = "TEST_SMTP_HOST"
 	EnvKeySMTPPort      = "TEST_SMTP_PORT"
 	EnvKeyOllamaBaseUrl = "TEST_OLLLAMA_BASE_URL"

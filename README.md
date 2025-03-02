@@ -23,7 +23,7 @@ There are three main components in this system:
   - If the url is not has own parser registry, capture screenshot of the full page url web and forward to LLM to do the OCR.
 - *Notification Worker* => consume notification queue and publish to channel
 
-In production, we use Notion as storage and Whatsapp as channel. However in local development, we use MySQL as storage and email mailpit as channel.
+In production, we use Notion as storage and Whatsapp as channel. However in local development, we use local `.jsonl` as storage and email mailpit as channel.
 
 ## Getting Started
 

@@ -11,7 +11,6 @@ require (
 	github.com/go-chi/cors v1.2.1
 	github.com/go-chi/render v1.0.3
 	github.com/go-resty/resty/v2 v2.16.2
-	github.com/go-sql-driver/mysql v1.9.0
 	github.com/invopop/jsonschema v0.13.0
 	github.com/openai/openai-go v0.1.0-alpha.43
 	github.com/riandyrn/go-env v1.1.1
@@ -20,7 +19,6 @@ require (
 )
 
 require (
-	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
