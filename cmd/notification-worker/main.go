@@ -61,20 +61,31 @@ func main() {
 		log.Fatalf("failed to initialize service: %v", err)
 	}
 
-	// initialize consumer
-	rmqConsumer, err := rmq.NewConsumer(rmq.ConsumerConfig{
+	// initialize notification consumer
+	notifRmqConsumer, err := rmq.NewConsumer(rmq.ConsumerConfig{
 		QueueName:          env.GetString(envKeyRabbitMQWaQueueName),
 		RabbitMQConnString: env.GetString(envKeyRabbitMQConn),
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize consumer: %v", err)
 	}
-	defer rmqConsumer.Close()
+	defer notifRmqConsumer.Close()
+
+	// initialize notification publisher
+	notifRmqPublisher, err := rmq.NewPublisher(rmq.PublisherConfig{
+		QueueName:          env.GetString(envKeyRabbitMQWaQueueName),
+		RabbitMQConnString: env.GetString(envKeyRabbitMQConn),
+	})
+	if err != nil {
+		log.Fatalf("failed to initialize consumer: %v", err)
+	}
+	defer notifRmqPublisher.Close()
 
 	// initialize worker
 	w, err := worker.New(worker.Config{
-		Service:     svc,
-		RmqConsumer: rmqConsumer,
+		Service:      svc,
+		RmqConsumer:  notifRmqConsumer,
+		RmqPublisher: notifRmqPublisher,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize worker: %v", err)
