@@ -4,47 +4,68 @@ import (
 	"context"
 	"testing"
 
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/testutil"
 	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driven/resolver/hqloc"
-	"github.com/go-resty/resty/v2"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/riandyrn/go-env"
 	"github.com/stretchr/testify/require"
 )
 
+type mockStorage struct {
+	companyLocation string
+}
+
+func (m *mockStorage) LookupCompanyLocation(ctx context.Context, companyName string) (string, error) {
+	return m.companyLocation, nil
+}
+
+func (m *mockStorage) Save(ctx context.Context, v core.Vacancy) (*core.VacancyRecord, error) {
+	return nil, nil
+}
+
 func TestLocate(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
+	type testCase struct {
+		Name                  string
+		CompanyName           string
+		CompanyLocFromStorage string
+		ExpCompanyLocation    string
+	}
+	testCases := []testCase{
+		{
+			Name:                  "Return from storage",
+			CompanyName:           "Fingerprint",
+			CompanyLocFromStorage: "Chicago, United States",
+			ExpCompanyLocation:    "Chicago, United States",
+		},
 	}
 
+	openaiKey := env.GetString(testutil.EnvKeyTestOpenAiKey)
+	if !testing.Short() && openaiKey != "" {
+		// test with using OpenAI API
+		testCases = append(testCases, testCase{
+			Name:               "Return from OpenAI",
+			CompanyName:        "Haraj",
+			ExpCompanyLocation: "Riyadh, Saudi Arabia",
+		})
+	}
+
+	mockStorage := &mockStorage{}
 	locator, err := hqloc.NewLocator(hqloc.LocatorConfig{
-		HttpClient:    resty.New(),
-		DatabaseID:    env.GetString(testutil.EnvKeyNotionDatabaseID),
-		NotionToken:   env.GetString(testutil.EnvKeyNotionToken),
-		OpenaAiClient: openai.NewClient(option.WithAPIKey(env.GetString(testutil.EnvKeyTestOpenAiKey))),
+		Storage:       mockStorage,
+		OpenaAiClient: openai.NewClient(option.WithAPIKey(openaiKey)),
 	})
 	require.NoError(t, err)
 
-	testCases := []struct {
-		CompanyName        string
-		ExpCompanyLocation string
-	}{
-		{
-			CompanyName:        "Automattic",
-			ExpCompanyLocation: "San Francisco, United States",
-		},
-		{
-			CompanyName:        "Haraj",
-			ExpCompanyLocation: "Riyadh, Saudi Arabia",
-		},
-		{
-			CompanyName:        "Fingerprint",
-			ExpCompanyLocation: "Chicago, United States",
-		},
-	}
 	for _, testCase := range testCases {
-		t.Run(testCase.CompanyName, func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
+			if testCase.CompanyLocFromStorage != "" {
+				mockStorage.companyLocation = testCase.CompanyLocFromStorage
+			} else {
+				mockStorage.companyLocation = ""
+			}
+
 			loc, err := locator.Locate(context.Background(), testCase.CompanyName)
 			require.NoError(t, err)
 			require.Equal(t, testCase.ExpCompanyLocation, loc)

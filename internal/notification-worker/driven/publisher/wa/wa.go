@@ -1,4 +1,4 @@
-package publisher
+package wa
 
 import (
 	"context"
@@ -26,19 +26,31 @@ func NewWaPublisher(cfg WaPublisherConfig) (*WaPublisher, error) {
 }
 
 type WaPublisherConfig struct {
-	HttpClient   *resty.Client `validate:"nonnil"`
-	Username     string        `validate:"nonzero"`
-	Password     string        `validate:"nonzero"`
-	WaApiBaseUrl string        `validate:"nonzero"`
+	HttpClient     *resty.Client `validate:"nonnil"`
+	Username       string        `validate:"nonzero"`
+	Password       string        `validate:"nonzero"`
+	WaApiBaseUrl   string        `validate:"nonzero"`
+	WaRecipientIDs []string      `validate:"nonzero"`
 }
 
-func (n *WaPublisher) Publish(ctx context.Context, ntf core.WaNotification) error {
+func (n *WaPublisher) Publish(ctx context.Context, ntf core.Notification) error {
+	for _, recID := range n.WaRecipientIDs {
+		err := n.sendMessage(ctx, ntf, recID)
+		if err != nil {
+			return fmt.Errorf("failed to send notification to %s: %w", recID, err)
+		}
+	}
+
+	return nil
+}
+
+func (n *WaPublisher) sendMessage(ctx context.Context, ntf core.Notification, recID string) error {
 	// send notification to whatsapp using Ghazlabs Whatsapp API
 	resp, err := n.HttpClient.R().
 		SetContext(ctx).
 		SetBasicAuth(n.Username, n.Password).
 		SetBody(map[string]interface{}{
-			"phone":   ntf.RecipientID,
+			"phone":   recID,
 			"message": convertVacancyToMessage(ntf.VacancyRecord),
 		}).
 		Post(fmt.Sprintf("%v/send/message", n.WaApiBaseUrl))

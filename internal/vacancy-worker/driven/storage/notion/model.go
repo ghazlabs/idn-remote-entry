@@ -1,4 +1,4 @@
-package storage
+package notion
 
 import (
 	"strings"
@@ -39,19 +39,21 @@ type BlockSelect struct {
 	Name string `json:"name"`
 }
 
+type RecordProperties struct {
+	Title            BlockTitle       `json:"Title"`
+	CompanyName      BlockRichText    `json:"Company Name"`
+	CompanyLocation  BlockRichText    `json:"Company Location"`
+	ShortDescription BlockRichText    `json:"Short Description"`
+	RelevantTags     BlockMultiSelect `json:"Relevant Tags"`
+	ApplyURL         BlockURL         `json:"Apply URL"`
+	DateAdded        BlockDate        `json:"Date Added"`
+}
+
 type InsertRecordPayload struct {
 	Parent struct {
 		DatabaseID string `json:"database_id"`
 	} `json:"parent"`
-	Properties struct {
-		Title            BlockTitle       `json:"Title"`
-		CompanyName      BlockRichText    `json:"Company Name"`
-		CompanyLocation  BlockRichText    `json:"Company Location"`
-		ShortDescription BlockRichText    `json:"Short Description"`
-		RelevantTags     BlockMultiSelect `json:"Relevant Tags"`
-		ApplyURL         BlockURL         `json:"Apply URL"`
-		DateAdded        BlockDate        `json:"Date Added"`
-	} `json:"properties"`
+	Properties RecordProperties `json:"properties"`
 }
 
 func NewInsertRecordPaylod(databaseID string, now time.Time, v core.Vacancy) InsertRecordPayload {
@@ -103,6 +105,27 @@ func NewInsertRecordPaylod(databaseID string, now time.Time, v core.Vacancy) Ins
 	p.Properties.DateAdded = dateAdded
 
 	return p
+}
+
+type Page struct {
+	Properties RecordProperties `json:"properties"`
+}
+
+type lookupRecordResponse struct {
+	Results []Page `json:"results"`
+}
+
+func (r lookupRecordResponse) GetCompanyLocation() string {
+	if len(r.Results) == 0 {
+		return ""
+	}
+	compLoc := r.Results[0].Properties.CompanyLocation.RichText[0].Text.Content
+	lowerCompLoc := strings.ToLower(compLoc)
+	if strings.Contains(lowerCompLoc, "remote") || strings.Contains(lowerCompLoc, "global") {
+		return ""
+	}
+
+	return compLoc
 }
 
 type insertRecordResponse struct {

@@ -1,0 +1,23 @@
+services:
+  mailpit:
+    image: axllent/mailpit:v1.12
+    ports:
+      - "8025:8025"  # Web UI
+      - "1025:1025"  # SMTP port
+    environment:
+      - MP_SMTP_AUTH_ACCEPT_ANY=1
+      - MP_SMTP_AUTH_ALLOW_INSECURE=1
+
+  integration-test:
+    build:
+      context: ../../../
+      dockerfile: ./build/package/integration_test/Dockerfile
+    depends_on:
+      mailpit:
+        condition: service_started
+    environment:
+      - TEST_SMTP_HOST=mailpit
+      - TEST_SMTP_PORT=1025
+    entrypoint: "go test -timeout=3m -short ./..."
+    volumes:
+      - ../../../internal:/go/src/github.com/ghazlabs/idn-remote-entry/internal

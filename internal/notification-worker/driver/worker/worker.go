@@ -7,9 +7,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/ghazlabs/idn-remote-entry/internal/notification-worker/core"
 	shcore "github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmq"
-	"github.com/ghazlabs/idn-remote-entry/internal/wa-worker/core"
 	"github.com/wagslane/go-rabbitmq"
 	"gopkg.in/validator.v2"
 )
@@ -38,7 +38,7 @@ func (w *Worker) Run() error {
 	// run the consumer
 	err := w.RmqConsumer.Run(func(d rabbitmq.Delivery) rabbitmq.Action {
 		// parse the message
-		var n shcore.WaNotification
+		var n shcore.Notification
 		err := json.Unmarshal(d.Body, &n)
 		if err != nil {
 			// discard the message if failed to parse

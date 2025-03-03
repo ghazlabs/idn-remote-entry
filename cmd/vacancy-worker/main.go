@@ -9,7 +9,8 @@ import (
 	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driven/resolver"
 	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driven/resolver/hqloc"
 	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driven/resolver/parser"
-	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driven/storage"
+	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driven/storage/jsonl"
+	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driven/storage/notion"
 	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driver/worker"
 	"github.com/go-resty/resty/v2"
 	"github.com/openai/openai-go"
@@ -18,28 +19,41 @@ import (
 )
 
 const (
+	envKeyStorageType              = "STORAGE_TYPE"
 	envKeyNotionDatabaseID         = "NOTION_DATABASE_ID"
 	envKeyNotionToken              = "NOTION_TOKEN"
 	envKeyOpenAiKey                = "OPENAI_KEY"
-	envKeyWhatsappRecipientIDs     = "WHATSAPP_RECIPIENT_IDS"
 	envKeyRabbitMQConn             = "RABBITMQ_CONN"
 	envKeyRabbitMQWaQueueName      = "RABBITMQ_WA_QUEUE_NAME"
 	envKeyRabbitMQVacancyQueueName = "RABBITMQ_VACANCY_QUEUE_NAME"
 )
 
+func initStorage() (core.Storage, error) {
+	switch env.GetString(envKeyStorageType) {
+	case "jsonl":
+		return jsonl.NewJSONLStorage(jsonl.JSONLStorageConfig{
+			FilePath: "vacancies.jsonl",
+		})
+
+	default: // notion
+		httpClient := resty.New()
+		return notion.NewNotionStorage(notion.NotionStorageConfig{
+			DatabaseID:  env.GetString(envKeyNotionDatabaseID),
+			NotionToken: env.GetString(envKeyNotionToken),
+			HttpClient:  httpClient,
+		})
+	}
+}
+
 func main() {
 	// initialize storage
-	httpClient := resty.New()
-	strg, err := storage.NewNotionStorage(storage.NotionStorageConfig{
-		DatabaseID:  env.GetString(envKeyNotionDatabaseID),
-		NotionToken: env.GetString(envKeyNotionToken),
-		HttpClient:  httpClient,
-	})
+	strg, err := initStorage()
 	if err != nil {
 		log.Fatalf("failed to initialize storage: %v", err)
 	}
 
 	// initialize parser
+	httpClient := resty.New()
 	openAiClient := openai.NewClient(option.WithAPIKey(env.GetString(envKeyOpenAiKey)))
 	textParser, err := parser.NewGreenhouseParser(parser.GreenhouseParserConfig{
 		HttpClient:    httpClient,
@@ -57,10 +71,8 @@ func main() {
 
 	// initialize locator
 	locator, err := hqloc.NewLocator(hqloc.LocatorConfig{
-		HttpClient:    httpClient,
 		OpenaAiClient: openAiClient,
-		DatabaseID:    env.GetString(envKeyNotionDatabaseID),
-		NotionToken:   env.GetString(envKeyNotionToken),
+		Storage:       strg,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize locator: %v", err)
@@ -92,9 +104,8 @@ func main() {
 	defer waRmqPub.Close()
 
 	// initialize notifier
-	waNotf, err := notifier.NewWaNotifier(notifier.WaNotifierConfig{
-		RmqPublisher:   waRmqPub,
-		WaRecipientIDs: env.GetStrings(envKeyWhatsappRecipientIDs, ","),
+	waNotf, err := notifier.NewNotifier(notifier.NotifierConfig{
+		RmqPublisher: waRmqPub,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize notifier: %v", err)

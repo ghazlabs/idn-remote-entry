@@ -9,36 +9,32 @@ import (
 	"gopkg.in/validator.v2"
 )
 
-type WaNotifier struct {
-	WaNotifierConfig
+type Notifier struct {
+	NotifierConfig
 }
 
-func NewWaNotifier(cfg WaNotifierConfig) (*WaNotifier, error) {
+func NewNotifier(cfg NotifierConfig) (*Notifier, error) {
 	// validate config
 	err := validator.Validate(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
-	return &WaNotifier{
-		WaNotifierConfig: cfg,
+	return &Notifier{
+		NotifierConfig: cfg,
 	}, nil
 }
 
-type WaNotifierConfig struct {
-	RmqPublisher   *rmq.Publisher `validate:"nonnil"`
-	WaRecipientIDs []string       `validate:"nonzero"`
+type NotifierConfig struct {
+	RmqPublisher *rmq.Publisher `validate:"nonnil"`
 }
 
-func (n *WaNotifier) Notify(ctx context.Context, v core.VacancyRecord) error {
-	for _, waID := range n.WaRecipientIDs {
-		ntf := core.WaNotification{
-			RecipientID:   waID,
-			VacancyRecord: v,
-		}
-		err := n.RmqPublisher.Publish(ctx, ntf)
-		if err != nil {
-			return fmt.Errorf("failed to publish notification %+v: %w", ntf, err)
-		}
+func (n *Notifier) Notify(ctx context.Context, v core.VacancyRecord) error {
+	ntf := core.Notification{
+		VacancyRecord: v,
+	}
+	err := n.RmqPublisher.Publish(ctx, ntf)
+	if err != nil {
+		return fmt.Errorf("failed to publish notification %+v: %w", ntf, err)
 	}
 
 	return nil

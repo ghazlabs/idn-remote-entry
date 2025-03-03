@@ -1,4 +1,4 @@
-package storage_test
+package notion_test
 
 import (
 	"context"
@@ -6,13 +6,17 @@ import (
 
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/testutil"
-	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driven/storage"
+	storage "github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/driven/storage/notion"
 	"github.com/go-resty/resty/v2"
 	"github.com/riandyrn/go-env"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSaveReallyLongJobDescription(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	s, err := storage.NewNotionStorage(storage.NotionStorageConfig{
 		DatabaseID:  env.GetString(testutil.EnvKeyNotionDatabaseID),
 		NotionToken: env.GetString(testutil.EnvKeyNotionToken),
