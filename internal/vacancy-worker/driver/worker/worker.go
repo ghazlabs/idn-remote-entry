@@ -19,8 +19,9 @@ type Worker struct {
 }
 
 type Config struct {
-	Service     core.Service  `validate:"nonnil"`
-	RmqConsumer *rmq.Consumer `validate:"nonnil"`
+	Service      core.Service   `validate:"nonnil"`
+	RmqConsumer  *rmq.Consumer  `validate:"nonnil"`
+	RmqPublisher *rmq.Publisher `validate:"nonnil"`
 }
 
 func New(cfg Config) (*Worker, error) {
@@ -37,6 +38,7 @@ func New(cfg Config) (*Worker, error) {
 func (w *Worker) Run() error {
 	// run the consumer
 	err := w.RmqConsumer.Run(func(d rabbitmq.Delivery) rabbitmq.Action {
+		ctx := context.Background()
 		// parse the message
 		var req shcore.SubmitRequest
 		err := json.Unmarshal(d.Body, &req)
@@ -46,19 +48,29 @@ func (w *Worker) Run() error {
 		}
 
 		// handle the message
-		log.Printf("handling vacancy %s\n", d.Body)
+		log.Printf("handling vacancy (attempt %d) %s\n", req.Retries+1, d.Body)
 		startTime := time.Now()
 		defer func() {
 			log.Printf("handled vacancy %s in %v\n", d.Body, time.Since(startTime))
 		}()
-		err = w.Config.Service.Handle(context.Background(), req)
+		err = w.Config.Service.Handle(ctx, req)
 		if err != nil {
 			// output error and sleep for 1 second
-			log.Printf("failed to handle notification %+v: %v, sleeping for 1 second...\n", req, err)
+			log.Printf("failed to handle request (attempt %d) %+v: %v, sleeping for 1 second...\n", req.Retries+1, req, err)
 			time.Sleep(1 * time.Second)
 
-			// requeue the message if failed to handle
-			return rabbitmq.NackRequeue
+			// increment retry count
+			req.Retries++
+			if req.Retries >= 3 {
+				log.Printf("discarding request after %d retries: %+v\n", req.Retries, req)
+				return rabbitmq.NackDiscard
+			}
+
+			// publish new request
+			w.Config.RmqPublisher.Publish(ctx, req)
+
+			// discard the original message since we've published new one
+			return rabbitmq.NackDiscard
 		}
 
 		return rabbitmq.Ack
