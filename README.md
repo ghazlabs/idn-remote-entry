@@ -52,6 +52,9 @@ curl -X POST http://localhost:9864/vacancies \
 > Replace `URL_VACANCY` with the actual url vacancy.
 > `x-api-key` is the api key to access the server you can find it in the [docker-compose](./deploy/local/run/docker-compose-local.yml) file.
 
-To check the result of the submission access on this url `http://localhost:8025`.
+When the vacancy is successfully processed, you will get the following events:
+
+- The vacancy will be saved in local database which can be accessed by using this command in separate terminal: `make list-jobs`.
+- You will get notification via email for the new vacancy on this url `http://localhost:8025` (in the production we used whatsapp not email).
 
 For more detail checkout the REST API documentation for this system [here](./docs/rest_api.md).
