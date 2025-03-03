@@ -18,6 +18,7 @@ type VacancyRecord struct {
 }
 
 type Notification struct {
+	Retries int `json:"retries"`
 	VacancyRecord
 }
 
