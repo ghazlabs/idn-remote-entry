@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
-	"time"
 
 	shcore "github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmq"
+	shworker "github.com/ghazlabs/idn-remote-entry/internal/shared/worker"
 	"github.com/ghazlabs/idn-remote-entry/internal/vacancy-worker/core"
 	"github.com/wagslane/go-rabbitmq"
 	"gopkg.in/validator.v2"
@@ -47,33 +46,9 @@ func (w *Worker) Run() error {
 			return rabbitmq.NackDiscard
 		}
 
-		// handle the message
-		log.Printf("handling vacancy (attempt %d) %s\n", req.Retries+1, d.Body)
-		startTime := time.Now()
-		defer func() {
-			log.Printf("handled vacancy %s in %v\n", d.Body, time.Since(startTime))
-		}()
-		err = w.Config.Service.Handle(ctx, req)
-		if err != nil {
-			// output error and sleep for 1 second
-			log.Printf("failed to handle request (attempt %d) %+v: %v, sleeping for 1 second...\n", req.Retries+1, req, err)
-			time.Sleep(1 * time.Second)
-
-			// increment retry count
-			req.Retries++
-			if req.Retries >= 3 {
-				log.Printf("discarding request after %d retries: %+v\n", req.Retries, req)
-				return rabbitmq.NackDiscard
-			}
-
-			// publish new request
-			w.Config.RmqPublisher.Publish(ctx, req)
-
-			// discard the original message since we've published new one
-			return rabbitmq.NackDiscard
-		}
-
-		return rabbitmq.Ack
+		return shworker.HandleWithRetry(ctx, &req, w.RmqPublisher, func(ctx context.Context, msg shworker.RetryableMessage) error {
+			return w.Service.Handle(ctx, *msg.(*shcore.SubmitRequest))
+		})
 	})
 	if err != nil {
 		return fmt.Errorf("failed to run rabbitmq consumer: %w", err)
