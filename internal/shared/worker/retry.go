@@ -10,7 +10,6 @@ import (
 )
 
 // RetryableMessage represents a message that can be retried
-// Note: All implementations must use pointer receivers
 type RetryableMessage interface {
 	GetRetries() int
 	IncreaseRetries()
