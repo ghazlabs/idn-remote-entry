@@ -1,6 +1,8 @@
 package core
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type Vacancy struct {
 	JobTitle         string   `json:"job_title,omitempty"`
@@ -22,6 +24,14 @@ type Notification struct {
 	VacancyRecord
 }
 
+func (r Notification) GetRetries() int {
+	return r.Retries
+}
+
+func (r *Notification) IncreaseRetries() {
+	r.Retries++
+}
+
 func (v Notification) ToJSON() []byte {
 	data, _ := json.Marshal(v)
 	return data
@@ -38,6 +48,14 @@ type SubmitRequest struct {
 	SubmissionType SubmitType `json:"submission_type"`
 	Retries        int        `json:"retries"`
 	Vacancy
+}
+
+func (r SubmitRequest) GetRetries() int {
+	return r.Retries
+}
+
+func (r *SubmitRequest) IncreaseRetries() {
+	r.Retries++
 }
 
 func (r SubmitRequest) Validate() error {
