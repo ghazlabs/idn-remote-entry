@@ -66,6 +66,11 @@ func (r *VacancyResolver) Resolve(ctx context.Context, url string) (*core.Vacanc
 	}
 
 parserFound:
+	err = vac.Validate()
+	if err != nil {
+		return nil, core.NewBadRequestError(err.Error())
+	}
+
 	// if the company location is not found (which indicated by "Global Remote")
 	// locate the company's headquarters
 	if strings.Contains(strings.ToLower(vac.CompanyLocation), "remote") {

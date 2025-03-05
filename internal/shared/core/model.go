@@ -2,6 +2,7 @@ package core
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 type Vacancy struct {
@@ -11,6 +12,19 @@ type Vacancy struct {
 	ShortDescription string   `json:"short_description,omitempty"`
 	RelevantTags     []string `json:"relevant_tags,omitempty"`
 	ApplyURL         string   `json:"apply_url,omitempty"`
+}
+
+func (r Vacancy) Validate() error {
+	if r.JobTitle == "" {
+		return fmt.Errorf("job title is required")
+	}
+	if r.CompanyName == "" {
+		return fmt.Errorf("company name is required")
+	}
+	if r.ApplyURL == "" {
+		return fmt.Errorf("apply url is required")
+	}
+	return nil
 }
 
 type VacancyRecord struct {
