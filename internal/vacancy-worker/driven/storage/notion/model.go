@@ -88,7 +88,7 @@ func NewInsertRecordPaylod(databaseID string, now time.Time, v core.Vacancy) Ins
 	}
 	p.Properties.ShortDescription.RichText = descBlocks
 
-	var selects []BlockSelect
+	selects := []BlockSelect{}
 	for _, tag := range v.RelevantTags {
 		var selectItem BlockSelect
 		selectItem.Name = tag
