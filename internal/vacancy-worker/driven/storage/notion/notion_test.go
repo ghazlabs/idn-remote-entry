@@ -74,3 +74,29 @@ Donec eget auctor nunc. Phasellus ullamcorper odio eu odio ultrices maximus. Ves
 
 	require.NotEmpty(t, rec.ID)
 }
+
+func TestSaveNoRelevantTags(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	s, err := storage.NewNotionStorage(storage.NotionStorageConfig{
+		DatabaseID:  env.GetString(testutil.EnvKeyNotionDatabaseID),
+		NotionToken: env.GetString(testutil.EnvKeyNotionToken),
+		HttpClient:  resty.New(),
+	})
+	require.NoError(t, err)
+
+	vacancyLongDesc := core.Vacancy{
+		JobTitle:         "Testing Vacancy With No Relevant Tags",
+		CompanyName:      "Testing Company",
+		CompanyLocation:  "Testing Location",
+		RelevantTags:     []string{},
+		ApplyURL:         "https://example.com",
+		ShortDescription: "Lorem.",
+	}
+
+	rec, err := s.Save(context.Background(), vacancyLongDesc)
+	require.NoError(t, err)
+	require.NotEmpty(t, rec.ID)
+}
