@@ -21,12 +21,14 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
-          eval `ssh-agent -s`
-          ssh-add - <<< "$PRIVATE_KEY"
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
 
-          ssh ec2-user@54.151.247.236 <<EOF
+          ssh -i private_key.pem ec2-user@54.151.247.236 <<EOF
             cd ~/go/src/github.com/ghazlabs/idn-remote-entry
             git checkout main
             git pull
             make deploy-ec2
           EOF
+
+          rm -f private_key.pem
