@@ -18,17 +18,13 @@ jobs:
           ref: ${{ github.sha }}
 
       - name: SSH and Run Commands on Remote Server
-        env:
-          PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        run: |
-          echo "$PRIVATE_KEY" > private_key.pem
-          chmod 600 private_key.pem
-
-          ssh -i private_key.pem ec2-user@54.151.247.236 <<EOF
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
             cd ~/go/src/github.com/ghazlabs/idn-remote-entry
             git checkout main
             git pull
             make deploy-ec2
-          EOF
-
-          rm -f private_key.pem
