@@ -3,6 +3,10 @@ name: Deploy
 on:
   release:
     types: [released]
+  # debug
+  push:
+    branches:
+      - chore/deployment
 
 jobs:
   deploy:
