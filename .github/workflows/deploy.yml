@@ -21,6 +21,7 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
+          eval `ssh-agent -s`
           ssh-add - <<< "$PRIVATE_KEY"
 
           ssh ec2-user@54.151.247.236 <<EOF
