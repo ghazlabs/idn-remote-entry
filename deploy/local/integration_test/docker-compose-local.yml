@@ -1,4 +1,18 @@
 services:
+  rabbitmq:
+    image: rabbitmq:4.0.5-management
+    ports:
+      - "15672:15672"  # Management web UI
+      - 5672:5672
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   mailpit:
     image: axllent/mailpit:v1.12
     ports:
@@ -13,11 +27,16 @@ services:
       context: ../../../
       dockerfile: ./build/package/integration_test/Dockerfile
     depends_on:
+      rabbitmq:
+        condition: service_healthy
       mailpit:
         condition: service_started
     environment:
       - TEST_SMTP_HOST=mailpit
       - TEST_SMTP_PORT=1025
+      - TEST_RABBITMQ_CONN=amqp://guest:guest@rabbitmq:5672/
+      - TEST_RABBITMQ_WA_QUEUE_NAME=wa_queue
+      - TEST_RABBITMQ_VACANCY_QUEUE_NAME=vacancy_queue
     entrypoint: "go test -timeout=3m -short ./..."
     volumes:
       - ../../../internal:/go/src/github.com/ghazlabs/idn-remote-entry/internal

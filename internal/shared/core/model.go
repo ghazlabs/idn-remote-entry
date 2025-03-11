@@ -18,6 +18,7 @@ type VacancyRecord struct {
 }
 
 type Notification struct {
+	Retries int `json:"retries"`
 	VacancyRecord
 }
 
@@ -35,6 +36,7 @@ const (
 
 type SubmitRequest struct {
 	SubmissionType SubmitType `json:"submission_type"`
+	Retries        int        `json:"retries"`
 	Vacancy
 }
 
