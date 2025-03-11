@@ -3,26 +3,23 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+
+	"gopkg.in/validator.v2"
 )
 
 type Vacancy struct {
-	JobTitle         string   `json:"job_title,omitempty"`
-	CompanyName      string   `json:"company_name,omitempty"`
+	JobTitle         string   `json:"job_title" validate:"nonzero"`
+	CompanyName      string   `json:"company_name" validate:"nonzero"`
 	CompanyLocation  string   `json:"company_location,omitempty"`
 	ShortDescription string   `json:"short_description,omitempty"`
 	RelevantTags     []string `json:"relevant_tags,omitempty"`
-	ApplyURL         string   `json:"apply_url,omitempty"`
+	ApplyURL         string   `json:"apply_url" validate:"nonzero"`
 }
 
 func (r Vacancy) Validate() error {
-	if r.JobTitle == "" {
-		return fmt.Errorf("job title is required")
-	}
-	if r.CompanyName == "" {
-		return fmt.Errorf("company name is required")
-	}
-	if r.ApplyURL == "" {
-		return fmt.Errorf("apply url is required")
+	err := validator.Validate(r)
+	if err != nil {
+		return fmt.Errorf("invalid vacancy: %w", err)
 	}
 	return nil
 }
