@@ -33,7 +33,7 @@ type service struct {
 
 func (s *service) HandleRequest(ctx context.Context, req core.SubmitRequest) error {
 	// validate request
-	err := validator.Validate(req)
+	err := req.Validate()
 	if err != nil {
 		return core.NewBadRequestError(fmt.Sprintf("invalid request: %v", err))
 	}
