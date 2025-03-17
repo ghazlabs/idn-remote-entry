@@ -44,16 +44,19 @@ Try to submit a url vacancy to the server by running the following command:
 ```bash
 curl -X POST http://localhost:9864/vacancies \
   -H 'x-api-key: d2e97dca-1131-4344-af0a-b3406e7ecb06' \
-  -d '{"submission_type": "url", "apply_url": "URL_VACANCY"}'
+  -d '{"submission_type": "url", "submission_email": "EMAIL_SUBMITTER", "apply_url": "URL_VACANCY"}'
 ```
 
 > Note:
 >
+> Replace `EMAIL_SUBMITTER` with submitter's email to test the approval flow.
 > Replace `URL_VACANCY` with the actual url vacancy.
 > `x-api-key` is the api key to access the server you can find it in the [docker-compose](./deploy/local/run/docker-compose-local.yml) file.
 
 When the vacancy is successfully processed, you will get the following events:
 
+- You will receive an approval notification via email if the `EMAIL_SUBMITTER` you entered is not whitelisted. The whitelisted emails are: `*@ghazlabs.com and *@idnremote.com`. You can edit this on `APPROVED_SUBMITTER_EMAILS` environment variable on `deploy/local/run/docker-compose-local.yml`. Otherwise, it will be automatically saved without requiring approval.
+- If the vacancy requires approval, you can either approve it by clicking the link in the email or simply ignore it to reject. Once approved, the vacancy will be saved.
 - The vacancy will be saved in local database which can be accessed by using this command in separate terminal: `make list-jobs`.
 - You will get notification via email for the new vacancy on this url `http://localhost:8025` (in the production we used whatsapp not email).
 
