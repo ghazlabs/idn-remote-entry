@@ -4,176 +4,18 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/server/core"
-	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/approval"
-	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/email"
-	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/token"
 	shcore "github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 )
-
-// Test environment constants
-const (
-	testServerDomain   = "test.example.com"
-	testSmtpHost       = "smtp.test.com"
-	testSmtpPort       = 587
-	testSmtpFrom       = "test@example.com"
-	testSmtpPass       = "testpass"
-	testAdminEmails    = "admin1@example.com,admin2@example.com"
-	testSecretKey      = "test-secret-key"
-	testApprovedEmails = "approved@example.com"
-)
-
-type mockQueue struct {
-	mock.Mock
-}
-
-func (m *mockQueue) Put(ctx context.Context, req shcore.SubmitRequest) error {
-	args := m.Called(ctx, req)
-	return args.Error(0)
-}
-
-type mockEmailClient struct {
-	mock.Mock
-	EmailConfig email.EmailConfig
-}
-
-func (m *mockEmailClient) SendApprovalRequest(ctx context.Context, req shcore.SubmitRequest, token string) error {
-	args := m.Called(ctx, req, token)
-	return args.Error(0)
-}
-
-type mockTokenizer struct {
-	mock.Mock
-	TokenizerConfig token.TokenizerConfig
-}
-
-func (m *mockTokenizer) EncodeRequest(req shcore.SubmitRequest) (string, error) {
-	args := m.Called(req)
-	return args.String(0), args.Error(1)
-}
-
-func (m *mockTokenizer) DecodeToken(token string) (shcore.SubmitRequest, error) {
-	args := m.Called(token)
-	return args.Get(0).(shcore.SubmitRequest), args.Error(1)
-}
-
-type mockApproval struct {
-	mock.Mock
-	ApprovalConfig approval.ApprovalConfig
-}
-
-func (m *mockApproval) NeedsApproval(email string) bool {
-	args := m.Called(email)
-	return args.Bool(0)
-}
-
-// Custom version of service for testing to bypass validation
-type testService struct {
-	queue     core.Queue
-	email     core.EmailClient
-	tokenizer core.Tokenizer
-	approval  core.Approval
-}
-
-func (s *testService) HandleRequest(ctx context.Context, req shcore.SubmitRequest) error {
-	err := req.Validate()
-	if err != nil {
-		return shcore.NewBadRequestError(err.Error())
-	}
-
-	token, err := s.tokenizer.EncodeRequest(req)
-	if err != nil {
-		return err
-	}
-
-	if s.approval.NeedsApproval(req.SubmissionEmail) {
-		err = s.email.SendApprovalRequest(ctx, req, token)
-		if err != nil {
-			return shcore.NewInternalError(err)
-		}
-		return nil
-	}
-
-	err = s.queue.Put(ctx, req)
-	if err != nil {
-		return shcore.NewInternalError(err)
-	}
-
-	return nil
-}
-
-func (s *testService) HandleApprove(ctx context.Context, tokenStr string) error {
-	req, err := s.tokenizer.DecodeToken(tokenStr)
-	if err != nil {
-		return err
-	}
-
-	err = req.Validate()
-	if err != nil {
-		return shcore.NewBadRequestError(err.Error())
-	}
-
-	err = s.queue.Put(ctx, req)
-	if err != nil {
-		return shcore.NewInternalError(err)
-	}
-
-	return nil
-}
-
-// Create a test service without using validator
-func newTestService(q core.Queue, e core.EmailClient, t core.Tokenizer, a core.Approval) core.Service {
-	return &testService{
-		queue:     q,
-		email:     e,
-		tokenizer: t,
-		approval:  a,
-	}
-}
-
-func setupTestMocks() (*mockQueue, *mockEmailClient, *mockTokenizer, *mockApproval, error) {
-	// Initialize email client mock with config
-	emailClient := &mockEmailClient{
-		EmailConfig: email.EmailConfig{
-			Host:         testSmtpHost,
-			Port:         testSmtpPort,
-			From:         testSmtpFrom,
-			Password:     testSmtpPass,
-			ServerDomain: testServerDomain,
-			AdminEmails:  testAdminEmails,
-		},
-	}
-
-	// Initialize tokenizer mock with config
-	tokenizer := &mockTokenizer{
-		TokenizerConfig: token.TokenizerConfig{
-			SecretKey: testSecretKey,
-		},
-	}
-
-	// Initialize approval mock with config
-	approvalClient := &mockApproval{
-		ApprovalConfig: approval.ApprovalConfig{
-			ApprovedSubmitterEmails: testApprovedEmails,
-		},
-	}
-
-	// Initialize queue mock
-	queueClient := &mockQueue{}
-
-	return queueClient, emailClient, tokenizer, approvalClient, nil
-}
 
 func TestServiceHandleRequest(t *testing.T) {
 	tests := []struct {
 		name       string
 		setupMocks func(context.Context, *mockQueue, *mockEmailClient, *mockTokenizer, *mockApproval)
 		request    shcore.SubmitRequest
-		wantErr    bool
 	}{
 		{
 			name: "submission type manual - submission email not whitelisted - approval needed",
@@ -198,7 +40,6 @@ func TestServiceHandleRequest(t *testing.T) {
 					ApplyURL:         "https://example.com/apply",
 				},
 			},
-			wantErr: false,
 		},
 		{
 			name: "submission type url - submission email not whitelisted - approval needed",
@@ -218,7 +59,6 @@ func TestServiceHandleRequest(t *testing.T) {
 					ApplyURL: "https://example.com/apply",
 				},
 			},
-			wantErr: false,
 		},
 		{
 			name: "submission type manual - submission email is empty - approval needed",
@@ -243,7 +83,6 @@ func TestServiceHandleRequest(t *testing.T) {
 					ApplyURL:         "https://example.com/apply",
 				},
 			},
-			wantErr: false,
 		},
 		{
 			name: "submission type url - submission email is empty - approval needed",
@@ -263,7 +102,6 @@ func TestServiceHandleRequest(t *testing.T) {
 					ApplyURL: "https://example.com/apply",
 				},
 			},
-			wantErr: false,
 		},
 		{
 			name: "submission type manual - submission email is whitelisted - no approval needed",
@@ -285,7 +123,6 @@ func TestServiceHandleRequest(t *testing.T) {
 					ApplyURL:    "https://example.com/apply",
 				},
 			},
-			wantErr: false,
 		},
 		{
 			name: "submission type url - submission email is whitelisted - no approval needed",
@@ -305,7 +142,6 @@ func TestServiceHandleRequest(t *testing.T) {
 					ApplyURL: "https://example.com/apply",
 				},
 			},
-			wantErr: false,
 		},
 	}
 
@@ -314,25 +150,25 @@ func TestServiceHandleRequest(t *testing.T) {
 			// Create context
 			ctx := context.Background()
 
-			// Setup mocks with test configuration
-			mockQueue, mockEmail, mockTokenizer, mockApproval, err := setupTestMocks()
+			// Initialize mocks
+			mockQueue := &mockQueue{}
+			mockEmail := &mockEmailClient{}
+			mockTokenizer := &mockTokenizer{}
+			mockApproval := &mockApproval{}
+
+			service, err := core.NewService(core.ServiceConfig{
+				Queue:     mockQueue,
+				Email:     mockEmail,
+				Tokenizer: mockTokenizer,
+				Approval:  mockApproval,
+			})
 			require.NoError(t, err)
 
-			// Setup test-specific mock behaviors
 			tt.setupMocks(ctx, mockQueue, mockEmail, mockTokenizer, mockApproval)
-
-			// Create service using our test constructor instead of core.NewService
-			service := newTestService(mockQueue, mockEmail, mockTokenizer, mockApproval)
 
 			// Execute test
 			err = service.HandleRequest(ctx, tt.request)
-
-			// Assert results
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
+			require.NoError(t, err)
 
 			// Verify mock expectations
 			mockQueue.AssertExpectations(t)
@@ -341,4 +177,45 @@ func TestServiceHandleRequest(t *testing.T) {
 			mockApproval.AssertExpectations(t)
 		})
 	}
+}
+
+type mockQueue struct {
+	mock.Mock
+}
+
+func (m *mockQueue) Put(ctx context.Context, req shcore.SubmitRequest) error {
+	args := m.Called(ctx, req)
+	return args.Error(0)
+}
+
+type mockEmailClient struct {
+	mock.Mock
+}
+
+func (m *mockEmailClient) SendApprovalRequest(ctx context.Context, req shcore.SubmitRequest, token string) error {
+	args := m.Called(ctx, req, token)
+	return args.Error(0)
+}
+
+type mockTokenizer struct {
+	mock.Mock
+}
+
+func (m *mockTokenizer) EncodeRequest(req shcore.SubmitRequest) (string, error) {
+	args := m.Called(req)
+	return args.String(0), args.Error(1)
+}
+
+func (m *mockTokenizer) DecodeToken(token string) (shcore.SubmitRequest, error) {
+	args := m.Called(token)
+	return args.Get(0).(shcore.SubmitRequest), args.Error(1)
+}
+
+type mockApproval struct {
+	mock.Mock
+}
+
+func (m *mockApproval) NeedsApproval(email string) bool {
+	args := m.Called(email)
+	return args.Bool(0)
 }
