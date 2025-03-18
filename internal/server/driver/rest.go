@@ -42,6 +42,7 @@ func (a *API) GetHandler() http.Handler {
 
 	r.Get("/", a.serveIndex)
 	r.Post("/vacancies", a.serveSubmitVacancy)
+	r.Get("/vacancies/approve", a.serveApproveVacancy)
 
 	return r
 }
@@ -68,6 +69,23 @@ func (a *API) serveSubmitVacancy(w http.ResponseWriter, r *http.Request) {
 
 	// handle the request
 	err = a.Service.HandleRequest(r.Context(), req)
+	if err != nil {
+		render.Render(w, r, NewErrorResp(err))
+		return
+	}
+
+	// return the success response
+	render.Render(w, r, NewSuccessResp(nil))
+}
+
+func (a *API) serveApproveVacancy(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("data")
+	if token == "" {
+		render.Render(w, r, NewErrorResp(NewBadRequestError("token is required")))
+		return
+	}
+
+	err := a.Service.HandleApprove(r.Context(), token)
 	if err != nil {
 		render.Render(w, r, NewErrorResp(err))
 		return

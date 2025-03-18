@@ -22,10 +22,18 @@ services:
       rabbitmq:
         condition: service_healthy
     environment:
+      - SERVER_DOMAIN=http://localhost:9864
       - LISTEN_PORT=9864
       - CLIENT_API_KEY=d2e97dca-1131-4344-af0a-b3406e7ecb06
       - RABBITMQ_CONN=amqp://guest:guest@rabbitmq:5672/
       - RABBITMQ_VACANCY_QUEUE_NAME=vacancy_queue
+      - APPROVED_SUBMITTER_EMAILS=*@ghazlabs.com,*@idnremote.com
+      - ADMIN_EMAILS=admin@ghazlabs.com
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+      - SMTP_FROM=noreply@ghazlabs.com
+      - SMTP_PASS=1234
+      - APPROVAL_JWT_SECRET_KEY=topsecret
     ports:
       - "9864:9864"
 
