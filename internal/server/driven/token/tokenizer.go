@@ -22,6 +22,7 @@ func NewTokenizer(cfg TokenizerConfig) (*Tokenizer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
+
 	return &Tokenizer{
 		TokenizerConfig: cfg,
 	}, nil
@@ -35,15 +36,18 @@ func (t *Tokenizer) EncodeRequest(req core.SubmitRequest) (string, error) {
 		"vacancy":          req.Vacancy,
 	})
 	tokenString, err := token.SignedString([]byte(t.SecretKey))
-	encodedToken := base64.URLEncoding.EncodeToString([]byte(tokenString))
+	if err != nil {
+		return "", fmt.Errorf("failed to sign token due to: %w", err)
+	}
 
-	return encodedToken, err
+	encodedToken := base64.URLEncoding.EncodeToString([]byte(tokenString))
+	return encodedToken, nil
 }
 
 func (t *Tokenizer) DecodeToken(tokenStr string) (core.SubmitRequest, error) {
 	claims, err := t.parseJWT(tokenStr)
 	if err != nil {
-		return core.SubmitRequest{}, fmt.Errorf("failed to parse token: %w", err)
+		return core.SubmitRequest{}, fmt.Errorf("failed to parse token due to: %w", err)
 	}
 
 	vacancy := t.mapVacancy(claims)

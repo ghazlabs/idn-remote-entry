@@ -43,7 +43,7 @@ func (s *service) HandleRequest(ctx context.Context, req core.SubmitRequest) err
 
 	token, err := s.Tokenizer.EncodeRequest(req)
 	if err != nil {
-		return err
+		return core.NewInternalError(err)
 	}
 
 	if s.Approval.NeedsApproval(req.SubmissionEmail) {
@@ -55,9 +55,9 @@ func (s *service) HandleRequest(ctx context.Context, req core.SubmitRequest) err
 		return nil
 	}
 
-	err = s.putToQueue(ctx, req)
+	err = s.Queue.Put(ctx, req)
 	if err != nil {
-		return err
+		return core.NewInternalError(err)
 	}
 
 	return nil
@@ -74,16 +74,7 @@ func (s *service) HandleApprove(ctx context.Context, tokenStr string) error {
 		return core.NewBadRequestError(fmt.Sprintf("invalid request: %v", err))
 	}
 
-	err = s.putToQueue(ctx, req)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *service) putToQueue(ctx context.Context, req core.SubmitRequest) error {
-	err := s.Queue.Put(ctx, req)
+	err = s.Queue.Put(ctx, req)
 	if err != nil {
 		return core.NewInternalError(err)
 	}
