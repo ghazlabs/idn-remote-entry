@@ -48,8 +48,9 @@ const (
 )
 
 type SubmitRequest struct {
-	SubmissionType SubmitType `json:"submission_type"`
-	Retries        int        `json:"retries"`
+	SubmissionType  SubmitType `json:"submission_type"`
+	SubmissionEmail string     `json:"submission_email"`
+	Retries         int        `json:"retries"`
 	Vacancy
 }
 
