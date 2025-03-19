@@ -50,9 +50,8 @@ func (e *EmailClient) SendApprovalRequest(
 		"%s\r\n", e.From, e.AdminEmails, subject, body)
 
 	var auth smtp.Auth
-	if e.Host == "mailpit" {
-		auth = nil
-	} else {
+	// For now we wont use TLS for local testing
+	if !e.isLocal() {
 		auth = smtp.PlainAuth("IDN Remote Entry", e.From, e.Password, e.Host)
 	}
 
@@ -63,6 +62,10 @@ func (e *EmailClient) SendApprovalRequest(
 		emailReceiverList,
 		[]byte(msg),
 	)
+}
+
+func (e EmailClient) isLocal() bool {
+	return e.Host == "mailpit" || strings.Contains(e.Host, "localhost")
 }
 
 func (e *EmailClient) setEmailApprovalBody(req core.SubmitRequest, tokenReq string) string {
