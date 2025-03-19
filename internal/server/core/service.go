@@ -43,13 +43,13 @@ func (s *service) HandleRequest(ctx context.Context, req core.SubmitRequest) err
 
 	token, err := s.Tokenizer.EncodeRequest(req)
 	if err != nil {
-		return core.NewInternalError(err)
+		return fmt.Errorf("failed to encode token: %w", err)
 	}
 
 	if s.Approval.NeedsApproval(req.SubmissionEmail) {
 		err = s.Email.SendApprovalRequest(ctx, req, token)
 		if err != nil {
-			return core.NewInternalError(err)
+			return fmt.Errorf("failed to send approval request: %w", err)
 		}
 
 		return nil
@@ -57,7 +57,7 @@ func (s *service) HandleRequest(ctx context.Context, req core.SubmitRequest) err
 
 	err = s.Queue.Put(ctx, req)
 	if err != nil {
-		return core.NewInternalError(err)
+		return fmt.Errorf("failed to put request in queue: %w", err)
 	}
 
 	return nil
@@ -76,7 +76,7 @@ func (s *service) HandleApprove(ctx context.Context, tokenStr string) error {
 
 	err = s.Queue.Put(ctx, req)
 	if err != nil {
-		return core.NewInternalError(err)
+		return fmt.Errorf("failed to put request in queue: %w", err)
 	}
 
 	return nil
