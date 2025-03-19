@@ -43,14 +43,14 @@ func (e *EmailClient) SendApprovalRequest(
 	emailReceiverList := strings.Split(e.AdminEmails, ",")
 	subject := "Action Required - New Job Vacancy Approval"
 	body := e.setEmailApprovalBody(req, tokenReq)
-	msg := fmt.Sprintf("From: %s\r\n"+
-		"To: %s\r\n"+
+	msg := fmt.Sprintf("From: IDN Remote Entry <%s>\r\n"+
+		"To: Admin IDNRemote.com <%s>\r\n"+
 		"Subject: %s\r\n"+
 		"\r\n"+
 		"%s\r\n", e.From, e.AdminEmails, subject, body)
 
+	// For now we wont use TLS
 	var auth smtp.Auth
-	// For now we wont use TLS for local testing
 	if !e.isLocal() {
 		auth = smtp.PlainAuth("IDN Remote Entry", e.From, e.Password, e.Host)
 	}
