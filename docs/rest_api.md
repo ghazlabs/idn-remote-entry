@@ -6,10 +6,11 @@ For authenticating the call, client is expected to submit predefined API key in 
 
 **Table of contents:**
 
-- [Submit Manual Vacancy](#submit-manual-vacancy)
-- [Submit URL Vacancy](#submit-url-vacancy)
-- [Approve Vacancy as Admin](#approve-vacancy-as-admin)
-- [System Errors](#system-errors)
+- [REST API](#rest-api)
+  - [Submit Manual Vacancy](#submit-manual-vacancy)
+  - [Submit URL Vacancy](#submit-url-vacancy)
+  - [Approve Vacancy as Admin](#approve-vacancy-as-admin)
+  - [System Errors](#system-errors)
 
 ## Submit Manual Vacancy
 
@@ -53,14 +54,14 @@ X-Api-Key: 1ba9d286-20d3-43a0-b31b-013486d375a0
 Content-Type: application/json
 
 {
- "submission_type": "manual",
- "submission_email": "admin@ghazlabs.com",
- "job_title": "FullStack Software Engineer",
- "company_name": "Zero Gravity",
- "company_location": "London, UK",
- "short_description": "Zero Gravity (zerogravity.co.uk) is a UK-based startup with a mission to help low-income students get into top universities and careers. \r\n\r\nWe are looking to expand our engineering team in 2025. It will be a fully remote role from anywhere in Indonesia, starting with a 6-month contract that can be extended to a year or more.",
- "relevant_tags": ["ruby on rails", "full stack development", "system design", "api integration", "startup"],
- "apply_url": "debbie@zerogravity.co.uk"
+  "submission_type": "manual",
+  "submission_email": "admin@ghazlabs.com",
+  "job_title": "FullStack Software Engineer",
+  "company_name": "Zero Gravity",
+  "company_location": "London, UK",
+  "short_description": "Zero Gravity (zerogravity.co.uk) is a UK-based startup with a mission to help low-income students get into top universities and careers. \r\n\r\nWe are looking to expand our engineering team in 2025. It will be a fully remote role from anywhere in Indonesia, starting with a 6-month contract that can be extended to a year or more.",
+  "relevant_tags": ["ruby on rails", "full stack development", "system design", "api integration", "startup"],
+  "apply_url": "debbie@zerogravity.co.uk"
 }
 ```
 
@@ -71,8 +72,8 @@ HTTP/1.1 200 OK
 Content-Type: application/json
 
 {
- "ok": true,
- "ts": 1735432224
+  "ok": true,
+  "ts": 1735432224
 }
 ```
 
@@ -97,11 +98,11 @@ If the vacancy submitter is not whitelisted, the vacancy will remain pending unt
 
 **Body Payload:**
 
-| Field              | Type   | Required | Description                                        |
-| ------------------ | ------ | -------- | -------------------------------------------------- |
-| `submission_type`  | String | Yes      | The value is `url`.                                |
-| `submission_email` | String | No       | The email of submitter.                            |
-| `apply_url`        | String | Yes      | URL for applying the job, the value must be URL.   |
+| Field              | Type   | Required | Description                                      |
+| ------------------ | ------ | -------- | ------------------------------------------------ |
+| `submission_type`  | String | Yes      | The value is `url`.                              |
+| `submission_email` | String | No       | The email of submitter.                          |
+| `apply_url`        | String | Yes      | URL for applying the job, the value must be URL. |
 
 > Note:
 >
@@ -115,9 +116,9 @@ X-Api-Key: 1ba9d286-20d3-43a0-b31b-013486d375a0
 Content-Type: application/json
 
 {
- "submission_type": "url",
- "submission_email": "admin@ghazlabs.com",
- "apply_url": "https://job-boards.eu.greenhouse.io/invertase/jobs/4492621101"
+  "submission_type": "url",
+  "submission_email": "admin@ghazlabs.com",
+  "apply_url": "https://job-boards.eu.greenhouse.io/invertase/jobs/4492621101"
 }
 ```
 
@@ -128,8 +129,8 @@ HTTP/1.1 200 OK
 Content-Type: application/json
 
 {
- "ok": true,
- "ts": 1735432224
+  "ok": true,
+  "ts": 1735432224
 }
 ```
 
@@ -173,50 +174,50 @@ This section tells the error possible returned by the system.
 
 - Invalid API Key
 
- ```json
- HTTP/1.1 401 Unauthorized
- Content-Type: application/json
+  ```json
+  HTTP/1.1 401 Unauthorized
+  Content-Type: application/json
 
- {
-  "ok": false,
-  "err": "ERR_INVALID_API_KEY",
-  "msg": "invalid api key",
-  "ts": 1735432224
- }
- ```
+  {
+    "ok": false,
+    "err": "ERR_INVALID_API_KEY",
+    "msg": "invalid api key",
+    "ts": 1735432224
+  }
+  ```
 
- This error indicates the submitted API Key in `X-Api-Key` header is invalid.
+  This error indicates the submitted API Key in `X-Api-Key` header is invalid.
 
 - Bad Request
 
- ```json
- HTTP/1.1 400 Bad Request
- Content-Type: application/json
+  ```json
+  HTTP/1.1 400 Bad Request
+  Content-Type: application/json
 
- {
-  "ok": false,
-  "err": "ERR_BAD_REQUEST",
-  "msg": "missing `apply_url`",
-  "ts": 1735432224
- }
- ```
+  {
+    "ok": false,
+    "err": "ERR_BAD_REQUEST",
+    "msg": "missing `apply_url`",
+    "ts": 1735432224
+  }
+  ```
 
- This error indicates generic error on the request submitted by client. Please see the value of `msg` for details.
+  This error indicates generic error on the request submitted by client. Please see the value of `msg` for details.
 
 - Internal Server Error
 
- ```json
- HTTP/1.1 500 Internal Server Error
- Content-Type: application/json
+  ```json
+  HTTP/1.1 500 Internal Server Error
+  Content-Type: application/json
 
- {
-  "ok": false,
-  "err": "ERR_INTERNAL_ERROR",
-  "msg": "unable to connection to notion due: timeout",
-  "ts": 1735432224
- }
- ```
+  {
+    "ok": false,
+    "err": "ERR_INTERNAL_ERROR",
+    "msg": "unable to connection to notion due: timeout",
+    "ts": 1735432224
+  }
+  ```
 
- This error indicates generic error on server side. Please see the value of `msg` for details.
+  This error indicates generic error on server side. Please see the value of `msg` for details.
 
 [Back to Top](#rest-api)
