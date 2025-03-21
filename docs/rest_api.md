@@ -146,7 +146,9 @@ A successful call indicates that the vacancy has been approved and ready to be p
 
 **Query Params:**
 
-- `data`, String => The value is `base64` of `JSON Web Token` consists of vacancy data. This query is mandatory.
+| Field  | Type   | Required | Description                                                           |
+| ------ | ------ | -------- | --------------------------------------------------------------------- |
+| `data` | String | Yes      | The value is `base64` of `JSON Web Token` consisting of vacancy data. |
 
 **Example Call:**
 
