@@ -41,21 +41,21 @@ func (e *EmailClient) SendApprovalRequest(ctx context.Context, req core.SubmitRe
 		messageID:    messageID,
 		serverDomain: e.ServerDomain,
 	}
-	return e.sendEmail(headers, body.getContentBodyHTML(), body.getContentBodyPlain())
+	return e.sendEmail(headers, messageID, body.getContentBodyHTML(), body.getContentBodyPlain())
 }
 
 func (e *EmailClient) ApproveRequest(ctx context.Context, messageID string) error {
 	message := "Approved by admin"
 	codeID := getCodeMessageID(messageID)
 	headers := e.buildHeaders(messageID, messageID, fmt.Sprintf("Re: IDNRemote.com - New Job Vacancy Approval - ID: %s", codeID))
-	return e.sendEmail(headers, message, message)
+	return e.sendEmail(headers, messageID, message, message)
 }
 
 func (e *EmailClient) RejectRequest(ctx context.Context, messageID string) error {
 	message := "Rejected by admin"
 	codeID := getCodeMessageID(messageID)
 	headers := e.buildHeaders(messageID, messageID, fmt.Sprintf("Re: IDNRemote.com - New Job Vacancy Approval - ID: %s", codeID))
-	return e.sendEmail(headers, message, message)
+	return e.sendEmail(headers, messageID, message, message)
 }
 
 func (e *EmailClient) buildHeaders(messageID, inReplyTo, subject string) map[string]string {
@@ -76,10 +76,10 @@ func (e *EmailClient) buildHeaders(messageID, inReplyTo, subject string) map[str
 	return headers
 }
 
-func (e *EmailClient) sendEmail(headers map[string]string, bodyHTML, bodyPlain string) error {
+func (e *EmailClient) sendEmail(headers map[string]string, messageID, bodyHTML, bodyPlain string) error {
 	addr := fmt.Sprintf("%s:%d", e.Host, e.Port)
 	emailReceivers := strings.Split(e.AdminEmails, ",")
-	boundary := "MIME_boundary_" + generateMessageID("boundary")
+	boundary := getCodeMessageID(messageID)
 
 	message := e.buildEmailMessage(headers, boundary, bodyHTML, bodyPlain)
 
