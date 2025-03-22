@@ -12,6 +12,8 @@ type Queue interface {
 
 type EmailClient interface {
 	SendApprovalRequest(ctx context.Context, req core.SubmitRequest, tokenReq string) error
+	ApproveRequest(ctx context.Context, messageID string) error
+	RejectRequest(ctx context.Context, messageID string) error
 }
 
 type Tokenizer interface {
@@ -21,4 +23,9 @@ type Tokenizer interface {
 
 type Approval interface {
 	NeedsApproval(submitterEmail string) bool
+}
+
+type ApprovalRequest struct {
+	TokenRequest string
+	MessageID    string
 }

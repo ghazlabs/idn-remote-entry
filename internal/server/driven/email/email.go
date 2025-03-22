@@ -24,116 +24,107 @@ type EmailClient struct {
 }
 
 func NewEmail(config EmailConfig) (*EmailClient, error) {
-	err := validator.Validate(config)
-	if err != nil {
+	if err := validator.Validate(config); err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
-
-	return &EmailClient{
-		EmailConfig: config,
-	}, nil
+	return &EmailClient{EmailConfig: config}, nil
 }
 
-func (e *EmailClient) SendApprovalRequest(
-	ctx context.Context,
-	req core.SubmitRequest,
-	tokenReq string,
-) error {
-	addr := fmt.Sprintf("%s:%d", e.Host, e.Port)
-	emailReceiverList := strings.Split(e.AdminEmails, ",")
-	subject := "Action Required - New Job Vacancy Approval"
-	body := e.setEmailApprovalBody(req, tokenReq)
-	msg := fmt.Sprintf("From: IDN Remote Entry <%s>\r\n"+
-		"To: Admin IDNRemote.com <%s>\r\n"+
-		"Subject: %s\r\n"+
-		"\r\n"+
-		"%s\r\n", e.From, e.AdminEmails, subject, body)
+func (e *EmailClient) SendApprovalRequest(ctx context.Context, req core.SubmitRequest, tokenReq string) error {
+	messageID := generateMessageID("idnremote.com")
+	codeID := getCodeMessageID(messageID)
+	headers := e.buildHeaders(messageID, "", fmt.Sprintf("IDNRemote.com - New Job Vacancy Approval - ID: %s", codeID))
 
-	// For now we wont use TLS
+	body := templateEmail{
+		req:          req,
+		token:        tokenReq,
+		messageID:    messageID,
+		serverDomain: e.ServerDomain,
+	}
+	return e.sendEmail(headers, body.getContentBodyHTML(), body.getContentBodyPlain())
+}
+
+func (e *EmailClient) ApproveRequest(ctx context.Context, messageID string) error {
+	message := "Approved by admin"
+	codeID := getCodeMessageID(messageID)
+	headers := e.buildHeaders(messageID, messageID, fmt.Sprintf("Re: IDNRemote.com - New Job Vacancy Approval - ID: %s", codeID))
+	return e.sendEmail(headers, message, message)
+}
+
+func (e *EmailClient) RejectRequest(ctx context.Context, messageID string) error {
+	message := "Rejected by admin"
+	codeID := getCodeMessageID(messageID)
+	headers := e.buildHeaders(messageID, messageID, fmt.Sprintf("Re: IDNRemote.com - New Job Vacancy Approval - ID: %s", codeID))
+	return e.sendEmail(headers, message, message)
+}
+
+func (e *EmailClient) buildHeaders(messageID, inReplyTo, subject string) map[string]string {
+	headers := map[string]string{
+		"From":    fmt.Sprintf("IDN Remote Entry <%s>", e.From),
+		"To":      strings.Join(strings.Split(e.AdminEmails, ","), ", "),
+		"Subject": subject,
+	}
+
+	if messageID != "" {
+		headers["Message-ID"] = messageID
+	}
+	if inReplyTo != "" {
+		headers["In-Reply-To"] = inReplyTo
+		headers["References"] = inReplyTo
+	}
+
+	return headers
+}
+
+func (e *EmailClient) sendEmail(headers map[string]string, bodyHTML, bodyPlain string) error {
+	addr := fmt.Sprintf("%s:%d", e.Host, e.Port)
+	emailReceivers := strings.Split(e.AdminEmails, ",")
+	boundary := "MIME_boundary_" + generateMessageID("boundary")
+
+	message := e.buildEmailMessage(headers, boundary, bodyHTML, bodyPlain)
+
 	var auth smtp.Auth
 	if !e.isLocal() {
 		auth = smtp.PlainAuth("IDN Remote Entry", e.From, e.Password, e.Host)
 	}
 
-	return smtp.SendMail(
-		addr,
-		auth,
-		e.From,
-		emailReceiverList,
-		[]byte(msg),
-	)
+	return smtp.SendMail(addr, auth, e.From, emailReceivers, []byte(message))
+}
+
+func (e *EmailClient) buildEmailMessage(headers map[string]string, boundary, bodyHTML, bodyPlain string) string {
+	var message strings.Builder
+
+	// Add headers
+	for k, v := range headers {
+		fmt.Fprintf(&message, "%s: %s\r\n", k, v)
+	}
+
+	// Add MIME headers
+	fmt.Fprintf(&message, "MIME-Version: 1.0\r\n")
+	fmt.Fprintf(&message, "Content-Type: multipart/alternative; boundary=%s\r\n\r\n", boundary)
+
+	// Add plain text version
+	fmt.Fprintf(&message, "--%s\r\n", boundary)
+	fmt.Fprintf(&message, "Content-Type: text/plain; charset=UTF-8\r\n\r\n")
+	fmt.Fprintf(&message, "%s\r\n\r\n", strings.ReplaceAll(bodyPlain, "<br>", "\n"))
+
+	// Add HTML version
+	fmt.Fprintf(&message, "--%s\r\n", boundary)
+	fmt.Fprintf(&message, "Content-Type: text/html; charset=UTF-8\r\n\r\n")
+	fmt.Fprintf(&message, `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    %s
+</body>
+</html>`, bodyHTML)
+
+	fmt.Fprintf(&message, "\r\n\r\n--%s--", boundary)
+	return message.String()
 }
 
 func (e EmailClient) isLocal() bool {
 	return e.Host == "mailpit" || strings.Contains(e.Host, "localhost")
-}
-
-func (e *EmailClient) setEmailApprovalBody(req core.SubmitRequest, tokenReq string) string {
-	var body string
-	bodyHeader := `Bismillah
-Assalamu'alaikum warahmatullahi wabarakatuh
-
-Hello Admin!
-Please review the following job vacancy:
-`
-	bodyDetailContent := e.setEmailApprovalDetailContent(req)
-	bodyApprovalContent := e.setEmailApprovalContent(tokenReq)
-
-	body = fmt.Sprintf("%s\r\n%s\r\n%s", bodyHeader, bodyDetailContent, bodyApprovalContent)
-
-	return body
-}
-
-func (e *EmailClient) setEmailApprovalDetailContent(req core.SubmitRequest) string {
-	var content string
-
-	if req.SubmissionType == core.SubmitTypeURL {
-		content = fmt.Sprintf(`
-Submission Email: %s
-Submission Type: URL
-URL: %s
-`, req.SubmissionEmail, req.Vacancy.ApplyURL)
-	}
-
-	if req.SubmissionType == core.SubmitTypeManual {
-		content = fmt.Sprintf(`
-Submission Email: %s
-Submission Type: Manual
-Job Title: %s
-Company: %s
-Location: %s
-Description: %s
---------------------
-Relevant Tags: %s
-URL: %s
-`,
-			req.SubmissionEmail,
-			req.Vacancy.JobTitle,
-			req.Vacancy.CompanyName,
-			req.Vacancy.CompanyLocation,
-			req.Vacancy.ShortDescription,
-			strings.Join(req.Vacancy.RelevantTags, ", "),
-			req.Vacancy.ApplyURL,
-		)
-	}
-
-	return content
-}
-
-func (e *EmailClient) setEmailApprovalContent(tokenReq string) string {
-	var content string
-	approveLink := fmt.Sprintf("%s/vacancies/approve?data=%s", e.ServerDomain, tokenReq)
-	content = fmt.Sprintf(`
-To approve, please click the link below:
-
-%s
-
-Thank you and have a nice day! May Allah bless you.
-
-Wassalamu'alaikum warahmatullahi wabarakatuh
-`,
-		approveLink,
-	)
-
-	return content
 }
