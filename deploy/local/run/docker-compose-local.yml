@@ -68,7 +68,7 @@ services:
       - RABBITMQ_WA_QUEUE_NAME=wa_queue
 
   mailpit:
-    image: axllent/mailpit:v1.12
+    image: axllent/mailpit:v1.23
     ports:
       - "8025:8025"  # Web UI
       - "1025:1025"  # SMTP port
