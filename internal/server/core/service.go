@@ -10,7 +10,8 @@ import (
 
 type Service interface {
 	HandleRequest(ctx context.Context, req core.SubmitRequest) error
-	HandleApprove(ctx context.Context, tokenStr string) error
+	HandleApprove(ctx context.Context, approvalReq ApprovalRequest) error
+	HandleReject(ctx context.Context, approvalReq ApprovalRequest) error
 }
 
 type ServiceConfig struct {
@@ -63,8 +64,8 @@ func (s *service) HandleRequest(ctx context.Context, req core.SubmitRequest) err
 	return nil
 }
 
-func (s *service) HandleApprove(ctx context.Context, tokenStr string) error {
-	req, err := s.Tokenizer.DecodeToken(tokenStr)
+func (s *service) HandleApprove(ctx context.Context, approvalReq ApprovalRequest) error {
+	req, err := s.Tokenizer.DecodeToken(approvalReq.TokenRequest)
 	if err != nil {
 		return err
 	}
@@ -72,6 +73,39 @@ func (s *service) HandleApprove(ctx context.Context, tokenStr string) error {
 	err = req.Validate()
 	if err != nil {
 		return core.NewBadRequestError(fmt.Sprintf("invalid request: %v", err))
+	}
+
+	if approvalReq.MessageID != "" {
+		err = s.Email.ApproveRequest(ctx, approvalReq.MessageID)
+		if err != nil {
+			return fmt.Errorf("failed to send approval request: %w", err)
+		}
+	}
+
+	err = s.Queue.Put(ctx, req)
+	if err != nil {
+		return fmt.Errorf("failed to put request in queue: %w", err)
+	}
+
+	return nil
+}
+
+func (s *service) HandleReject(ctx context.Context, approvalReq ApprovalRequest) error {
+	req, err := s.Tokenizer.DecodeToken(approvalReq.TokenRequest)
+	if err != nil {
+		return err
+	}
+
+	err = req.Validate()
+	if err != nil {
+		return core.NewBadRequestError(fmt.Sprintf("invalid request: %v", err))
+	}
+
+	if approvalReq.MessageID != "" {
+		err = s.Email.RejectRequest(ctx, approvalReq.MessageID)
+		if err != nil {
+			return fmt.Errorf("failed to send approval request: %w", err)
+		}
 	}
 
 	err = s.Queue.Put(ctx, req)
