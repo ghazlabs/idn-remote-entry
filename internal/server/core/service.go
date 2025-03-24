@@ -142,10 +142,5 @@ func (s *service) HandleReject(ctx context.Context, approvalReq ApprovalRequest)
 		}
 	}
 
-	err = s.Queue.Put(ctx, req)
-	if err != nil {
-		return fmt.Errorf("failed to put request in queue: %w", err)
-	}
-
 	return nil
 }
