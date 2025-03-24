@@ -30,7 +30,7 @@ func NewEmail(config EmailConfig) (*EmailClient, error) {
 	return &EmailClient{EmailConfig: config}, nil
 }
 
-func (e *EmailClient) SendApprovalRequest(ctx context.Context, req core.SubmitRequest, tokenReq string) error {
+func (e *EmailClient) SendApprovalRequest(ctx context.Context, req core.SubmitRequest, tokenReq string) (string, error) {
 	messageID := generateMessageID("idnremote.com")
 	codeID := getCodeMessageID(messageID)
 	headers := e.buildHeaders(messageID, "", fmt.Sprintf("IDNRemote.com - New Job Vacancy Approval - ID: %s", codeID))
@@ -41,7 +41,12 @@ func (e *EmailClient) SendApprovalRequest(ctx context.Context, req core.SubmitRe
 		messageID:    messageID,
 		serverDomain: e.ServerDomain,
 	}
-	return e.sendEmail(headers, messageID, body.getContentBodyHTML(), body.getContentBodyPlain())
+
+	if err := e.sendEmail(headers, messageID, body.getContentBodyHTML(), body.getContentBodyPlain()); err != nil {
+		return "", err
+	}
+
+	return messageID, nil
 }
 
 func (e *EmailClient) ApproveRequest(ctx context.Context, messageID string) error {

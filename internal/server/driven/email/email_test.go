@@ -37,6 +37,7 @@ func TestSendApprovalRequest(t *testing.T) {
 		},
 	}
 
-	err = client.SendApprovalRequest(context.Background(), req, "token123")
+	msgID, err := client.SendApprovalRequest(context.Background(), req, "token123")
 	assert.NoError(t, err)
+	assert.NotEmpty(t, msgID)
 }
