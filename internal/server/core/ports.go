@@ -11,7 +11,7 @@ type Queue interface {
 }
 
 type EmailClient interface {
-	SendApprovalRequest(ctx context.Context, req core.SubmitRequest, tokenReq string) error
+	SendApprovalRequest(ctx context.Context, req core.SubmitRequest, tokenReq string) (string, error)
 	ApproveRequest(ctx context.Context, messageID string) error
 	RejectRequest(ctx context.Context, messageID string) error
 }
@@ -25,7 +25,8 @@ type Approval interface {
 	NeedsApproval(submitterEmail string) bool
 }
 
-type ApprovalRequest struct {
-	TokenRequest string
-	MessageID    string
+type ApprovalStorage interface {
+	GetApprovalState(messageID string) (ApprovalState, error)
+	UpdateApprovalState(messageID string, state ApprovalState) error
+	SaveApprovalRequest(messageID string, req core.SubmitRequest) error
 }
