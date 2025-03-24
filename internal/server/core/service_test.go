@@ -193,6 +193,184 @@ func TestServiceHandleRequest(t *testing.T) {
 	}
 }
 
+func TestServiceHandleApprove(t *testing.T) {
+	tests := []struct {
+		name       string
+		setupMocks func(context.Context, *mockQueue, *mockEmailClient, *mockTokenizer, *mockApprovalStorage)
+		request    core.ApprovalRequest
+		wantErr    bool
+		errMsg     string
+	}{
+		{
+			name: "successful approval with message ID",
+			setupMocks: func(ctx context.Context, q *mockQueue, e *mockEmailClient, tok *mockTokenizer, s *mockApprovalStorage) {
+				req := shcore.SubmitRequest{
+					SubmissionEmail: "test@example.com",
+					Vacancy: shcore.Vacancy{
+						JobTitle: "Test Job",
+					},
+				}
+				tok.On("DecodeToken", "test-token").Return(req, nil)
+				s.On("GetApprovalState", "test-message").Return(core.ApprovalStatePending, nil)
+				e.On("ApproveRequest", ctx, "test-message").Return(nil)
+				s.On("UpdateApprovalState", "test-message", core.ApprovalStateApproved).Return(nil)
+				q.On("Put", ctx, req).Return(nil)
+			},
+			request: core.ApprovalRequest{
+				MessageID:    "test-message",
+				TokenRequest: "test-token",
+			},
+		},
+		{
+			name: "approval already processed",
+			setupMocks: func(ctx context.Context, q *mockQueue, e *mockEmailClient, tok *mockTokenizer, s *mockApprovalStorage) {
+				req := shcore.SubmitRequest{
+					SubmissionEmail: "test@example.com",
+				}
+				tok.On("DecodeToken", "test-token").Return(req, nil)
+				s.On("GetApprovalState", "test-message").Return(core.ApprovalStateApproved, nil)
+			},
+			request: core.ApprovalRequest{
+				MessageID:    "test-message",
+				TokenRequest: "test-token",
+			},
+			wantErr: true,
+			errMsg:  "approval already processed",
+		},
+		{
+			name: "invalid token",
+			setupMocks: func(ctx context.Context, q *mockQueue, e *mockEmailClient, tok *mockTokenizer, s *mockApprovalStorage) {
+				tok.On("DecodeToken", "invalid-token").Return(shcore.SubmitRequest{}, shcore.NewBadRequestError("invalid token"))
+			},
+			request: core.ApprovalRequest{
+				MessageID:    "test-message",
+				TokenRequest: "invalid-token",
+			},
+			wantErr: true,
+			errMsg:  "invalid token",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			queue := &mockQueue{}
+			email := &mockEmailClient{}
+			tokenizer := &mockTokenizer{}
+			approvalStorage := &mockApprovalStorage{}
+
+			svc, err := core.NewService(core.ServiceConfig{
+				Queue:           queue,
+				Email:           email,
+				Tokenizer:       tokenizer,
+				Approval:        &mockApproval{}, // not used
+				ApprovalStorage: approvalStorage,
+			})
+			require.NoError(t, err)
+
+			tt.setupMocks(ctx, queue, email, tokenizer, approvalStorage)
+
+			err = svc.HandleApprove(ctx, tt.request)
+			if tt.wantErr {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.errMsg)
+				return
+			}
+
+			require.NoError(t, err)
+			mock.AssertExpectationsForObjects(t, queue, email, tokenizer, approvalStorage)
+		})
+	}
+}
+
+func TestServiceHandleReject(t *testing.T) {
+	tests := []struct {
+		name       string
+		setupMocks func(context.Context, *mockEmailClient, *mockTokenizer, *mockApprovalStorage)
+		request    core.ApprovalRequest
+		wantErr    bool
+		errMsg     string
+	}{
+		{
+			name: "successful rejection with message ID",
+			setupMocks: func(ctx context.Context, e *mockEmailClient, tok *mockTokenizer, s *mockApprovalStorage) {
+				req := shcore.SubmitRequest{
+					SubmissionEmail: "test@example.com",
+					Vacancy: shcore.Vacancy{
+						JobTitle: "Test Job",
+					},
+				}
+				tok.On("DecodeToken", "test-token").Return(req, nil)
+				s.On("GetApprovalState", "test-message").Return(core.ApprovalStatePending, nil)
+				e.On("RejectRequest", ctx, "test-message").Return(nil)
+				s.On("UpdateApprovalState", "test-message", core.ApprovalStateRejected).Return(nil)
+			},
+			request: core.ApprovalRequest{
+				MessageID:    "test-message",
+				TokenRequest: "test-token",
+			},
+		},
+		{
+			name: "rejection already processed",
+			setupMocks: func(ctx context.Context, e *mockEmailClient, tok *mockTokenizer, s *mockApprovalStorage) {
+				req := shcore.SubmitRequest{
+					SubmissionEmail: "test@example.com",
+				}
+				tok.On("DecodeToken", "test-token").Return(req, nil)
+				s.On("GetApprovalState", "test-message").Return(core.ApprovalStateRejected, nil)
+			},
+			request: core.ApprovalRequest{
+				MessageID:    "test-message",
+				TokenRequest: "test-token",
+			},
+			wantErr: true,
+			errMsg:  "approval already processed",
+		},
+		{
+			name: "invalid token",
+			setupMocks: func(ctx context.Context, e *mockEmailClient, tok *mockTokenizer, s *mockApprovalStorage) {
+				tok.On("DecodeToken", "invalid-token").Return(shcore.SubmitRequest{}, shcore.NewBadRequestError("invalid token"))
+			},
+			request: core.ApprovalRequest{
+				MessageID:    "test-message",
+				TokenRequest: "invalid-token",
+			},
+			wantErr: true,
+			errMsg:  "invalid token",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			queue := &mockQueue{}
+			email := &mockEmailClient{}
+			tokenizer := &mockTokenizer{}
+			storage := &mockApprovalStorage{}
+
+			svc, err := core.NewService(core.ServiceConfig{
+				Queue:           queue,
+				Email:           email,
+				Tokenizer:       tokenizer,
+				Approval:        &mockApproval{}, // not used
+				ApprovalStorage: storage,
+			})
+			require.NoError(t, err)
+
+			tt.setupMocks(ctx, email, tokenizer, storage)
+
+			err = svc.HandleReject(ctx, tt.request)
+			if tt.wantErr {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.errMsg)
+				return
+			}
+			require.NoError(t, err)
+			mock.AssertExpectationsForObjects(t, email, tokenizer, storage)
+		})
+	}
+}
+
 type mockQueue struct {
 	mock.Mock
 }
