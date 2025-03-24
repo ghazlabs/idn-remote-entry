@@ -14,19 +14,22 @@ import (
 func TestServiceHandleRequest(t *testing.T) {
 	tests := []struct {
 		name       string
-		setupMocks func(context.Context, *mockQueue, *mockEmailClient, *mockTokenizer, *mockApproval)
+		setupMocks func(context.Context, *mockQueue, *mockEmailClient, *mockTokenizer, *mockApproval, *mockApprovalStorage)
 		request    shcore.SubmitRequest
 	}{
 		{
 			name: "submission type manual - submission email not whitelisted - approval needed",
-			setupMocks: func(ctx context.Context, q *mockQueue, e *mockEmailClient, tok *mockTokenizer, a *mockApproval) {
+			setupMocks: func(ctx context.Context, q *mockQueue, e *mockEmailClient, tok *mockTokenizer, a *mockApproval, s *mockApprovalStorage) {
 				tok.On("EncodeRequest", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == "submitter@example.com"
 				})).Return("mock-token", nil)
 				a.On("NeedsApproval", "submitter@example.com").Return(true)
 				e.On("SendApprovalRequest", ctx, mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == "submitter@example.com"
-				}), "mock-token").Return(nil)
+				}), "mock-token").Return("mock-message-id", nil)
+				s.On("SaveApprovalRequest", "mock-message-id", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
+					return req.SubmissionEmail == "submitter@example.com"
+				})).Return(nil)
 			},
 			request: shcore.SubmitRequest{
 				SubmissionType:  shcore.SubmitTypeManual,
@@ -43,14 +46,17 @@ func TestServiceHandleRequest(t *testing.T) {
 		},
 		{
 			name: "submission type url - submission email not whitelisted - approval needed",
-			setupMocks: func(ctx context.Context, q *mockQueue, e *mockEmailClient, tok *mockTokenizer, a *mockApproval) {
+			setupMocks: func(ctx context.Context, q *mockQueue, e *mockEmailClient, tok *mockTokenizer, a *mockApproval, s *mockApprovalStorage) {
 				tok.On("EncodeRequest", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == "submitter@example.com"
 				})).Return("mock-token", nil)
 				a.On("NeedsApproval", "submitter@example.com").Return(true)
 				e.On("SendApprovalRequest", ctx, mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == "submitter@example.com"
-				}), "mock-token").Return(nil)
+				}), "mock-token").Return("mock-message-id", nil)
+				s.On("SaveApprovalRequest", "mock-message-id", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
+					return req.SubmissionEmail == "submitter@example.com"
+				})).Return(nil)
 			},
 			request: shcore.SubmitRequest{
 				SubmissionType:  shcore.SubmitTypeManual,
@@ -62,14 +68,17 @@ func TestServiceHandleRequest(t *testing.T) {
 		},
 		{
 			name: "submission type manual - submission email is empty - approval needed",
-			setupMocks: func(ctx context.Context, q *mockQueue, e *mockEmailClient, tok *mockTokenizer, a *mockApproval) {
+			setupMocks: func(ctx context.Context, q *mockQueue, e *mockEmailClient, tok *mockTokenizer, a *mockApproval, s *mockApprovalStorage) {
 				tok.On("EncodeRequest", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == ""
 				})).Return("mock-token", nil)
 				a.On("NeedsApproval", "").Return(true)
 				e.On("SendApprovalRequest", ctx, mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == ""
-				}), "mock-token").Return(nil)
+				}), "mock-token").Return("mock-message-id", nil)
+				s.On("SaveApprovalRequest", "mock-message-id", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
+					return req.SubmissionEmail == ""
+				})).Return(nil)
 			},
 			request: shcore.SubmitRequest{
 				SubmissionType:  shcore.SubmitTypeManual,
@@ -86,17 +95,20 @@ func TestServiceHandleRequest(t *testing.T) {
 		},
 		{
 			name: "submission type url - submission email is empty - approval needed",
-			setupMocks: func(ctx context.Context, q *mockQueue, e *mockEmailClient, tok *mockTokenizer, a *mockApproval) {
+			setupMocks: func(ctx context.Context, q *mockQueue, e *mockEmailClient, tok *mockTokenizer, a *mockApproval, s *mockApprovalStorage) {
 				tok.On("EncodeRequest", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == ""
 				})).Return("mock-token", nil)
 				a.On("NeedsApproval", "").Return(true)
 				e.On("SendApprovalRequest", ctx, mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == ""
-				}), "mock-token").Return(nil)
+				}), "mock-token").Return("mock-message-id", nil)
+				s.On("SaveApprovalRequest", "mock-message-id", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
+					return req.SubmissionEmail == ""
+				})).Return(nil)
 			},
 			request: shcore.SubmitRequest{
-				SubmissionType:  shcore.SubmitTypeManual,
+				SubmissionType:  shcore.SubmitTypeURL,
 				SubmissionEmail: "",
 				Vacancy: shcore.Vacancy{
 					ApplyURL: "https://example.com/apply",
@@ -105,7 +117,7 @@ func TestServiceHandleRequest(t *testing.T) {
 		},
 		{
 			name: "submission type manual - submission email is whitelisted - no approval needed",
-			setupMocks: func(ctx context.Context, q *mockQueue, e *mockEmailClient, tok *mockTokenizer, a *mockApproval) {
+			setupMocks: func(ctx context.Context, q *mockQueue, e *mockEmailClient, tok *mockTokenizer, a *mockApproval, s *mockApprovalStorage) {
 				tok.On("EncodeRequest", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == "approved@example.com"
 				})).Return("mock-token", nil)
@@ -126,7 +138,7 @@ func TestServiceHandleRequest(t *testing.T) {
 		},
 		{
 			name: "submission type url - submission email is whitelisted - no approval needed",
-			setupMocks: func(ctx context.Context, q *mockQueue, e *mockEmailClient, tok *mockTokenizer, a *mockApproval) {
+			setupMocks: func(ctx context.Context, q *mockQueue, e *mockEmailClient, tok *mockTokenizer, a *mockApproval, s *mockApprovalStorage) {
 				tok.On("EncodeRequest", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == "approved@example.com"
 				})).Return("mock-token", nil)
@@ -155,16 +167,18 @@ func TestServiceHandleRequest(t *testing.T) {
 			mockEmail := &mockEmailClient{}
 			mockTokenizer := &mockTokenizer{}
 			mockApproval := &mockApproval{}
+			mockApprovalStorage := &mockApprovalStorage{}
 
 			service, err := core.NewService(core.ServiceConfig{
-				Queue:     mockQueue,
-				Email:     mockEmail,
-				Tokenizer: mockTokenizer,
-				Approval:  mockApproval,
+				Queue:           mockQueue,
+				Email:           mockEmail,
+				Tokenizer:       mockTokenizer,
+				Approval:        mockApproval,
+				ApprovalStorage: mockApprovalStorage,
 			})
 			require.NoError(t, err)
 
-			tt.setupMocks(ctx, mockQueue, mockEmail, mockTokenizer, mockApproval)
+			tt.setupMocks(ctx, mockQueue, mockEmail, mockTokenizer, mockApproval, mockApprovalStorage)
 
 			// Execute test
 			err = service.HandleRequest(ctx, tt.request)
@@ -192,8 +206,18 @@ type mockEmailClient struct {
 	mock.Mock
 }
 
-func (m *mockEmailClient) SendApprovalRequest(ctx context.Context, req shcore.SubmitRequest, token string) error {
+func (m *mockEmailClient) SendApprovalRequest(ctx context.Context, req shcore.SubmitRequest, token string) (string, error) {
 	args := m.Called(ctx, req, token)
+	return args.String(0), args.Error(1)
+}
+
+func (m *mockEmailClient) ApproveRequest(ctx context.Context, messageID string) error {
+	args := m.Called(ctx, messageID)
+	return args.Error(0)
+}
+
+func (m *mockEmailClient) RejectRequest(ctx context.Context, messageID string) error {
+	args := m.Called(ctx, messageID)
 	return args.Error(0)
 }
 
@@ -218,4 +242,23 @@ type mockApproval struct {
 func (m *mockApproval) NeedsApproval(email string) bool {
 	args := m.Called(email)
 	return args.Bool(0)
+}
+
+type mockApprovalStorage struct {
+	mock.Mock
+}
+
+func (m *mockApprovalStorage) GetApprovalState(messageID string) (core.ApprovalState, error) {
+	args := m.Called(messageID)
+	return args.Get(0).(core.ApprovalState), args.Error(1)
+}
+
+func (m *mockApprovalStorage) UpdateApprovalState(messageID string, state core.ApprovalState) error {
+	args := m.Called(messageID, state)
+	return args.Error(0)
+}
+
+func (m *mockApprovalStorage) SaveApprovalRequest(messageID string, req shcore.SubmitRequest) error {
+	args := m.Called(messageID, req)
+	return args.Error(0)
 }
