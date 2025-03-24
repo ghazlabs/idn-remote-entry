@@ -10,14 +10,16 @@ import (
 
 type Service interface {
 	HandleRequest(ctx context.Context, req core.SubmitRequest) error
-	HandleApprove(ctx context.Context, tokenStr string) error
+	HandleApprove(ctx context.Context, approvalReq ApprovalRequest) error
+	HandleReject(ctx context.Context, approvalReq ApprovalRequest) error
 }
 
 type ServiceConfig struct {
-	Queue     Queue       `validate:"nonnil"`
-	Email     EmailClient `validate:"nonnil"`
-	Tokenizer Tokenizer   `validate:"nonnil"`
-	Approval  Approval    `validate:"nonnil"`
+	Queue           Queue           `validate:"nonnil"`
+	Email           EmailClient     `validate:"nonnil"`
+	Tokenizer       Tokenizer       `validate:"nonnil"`
+	Approval        Approval        `validate:"nonnil"`
+	ApprovalStorage ApprovalStorage `validate:"nonnil"`
 }
 
 func NewService(cfg ServiceConfig) (Service, error) {
@@ -47,9 +49,14 @@ func (s *service) HandleRequest(ctx context.Context, req core.SubmitRequest) err
 	}
 
 	if s.Approval.NeedsApproval(req.SubmissionEmail) {
-		err = s.Email.SendApprovalRequest(ctx, req, token)
+		messageID, err := s.Email.SendApprovalRequest(ctx, req, token)
 		if err != nil {
 			return fmt.Errorf("failed to send approval request: %w", err)
+		}
+
+		err = s.ApprovalStorage.SaveApprovalRequest(messageID, req)
+		if err != nil {
+			return fmt.Errorf("failed to save approval request: %w", err)
 		}
 
 		return nil
@@ -63,8 +70,8 @@ func (s *service) HandleRequest(ctx context.Context, req core.SubmitRequest) err
 	return nil
 }
 
-func (s *service) HandleApprove(ctx context.Context, tokenStr string) error {
-	req, err := s.Tokenizer.DecodeToken(tokenStr)
+func (s *service) HandleApprove(ctx context.Context, approvalReq ApprovalRequest) error {
+	req, err := s.Tokenizer.DecodeToken(approvalReq.TokenRequest)
 	if err != nil {
 		return err
 	}
@@ -72,6 +79,67 @@ func (s *service) HandleApprove(ctx context.Context, tokenStr string) error {
 	err = req.Validate()
 	if err != nil {
 		return core.NewBadRequestError(fmt.Sprintf("invalid request: %v", err))
+	}
+
+	if approvalReq.MessageID != "" {
+		approvalState, err := s.ApprovalStorage.GetApprovalState(approvalReq.MessageID)
+		if err != nil {
+			return err
+		}
+
+		if approvalState != ApprovalStatePending {
+			return core.NewBadRequestError("approval already processed")
+		}
+
+		err = s.Email.ApproveRequest(ctx, approvalReq.MessageID)
+		if err != nil {
+			return fmt.Errorf("failed to send approval request: %w", err)
+		}
+
+		err = s.ApprovalStorage.UpdateApprovalState(approvalReq.MessageID, ApprovalStateApproved)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = s.Queue.Put(ctx, req)
+	if err != nil {
+		return fmt.Errorf("failed to put request in queue: %w", err)
+	}
+
+	return nil
+}
+
+func (s *service) HandleReject(ctx context.Context, approvalReq ApprovalRequest) error {
+	req, err := s.Tokenizer.DecodeToken(approvalReq.TokenRequest)
+	if err != nil {
+		return err
+	}
+
+	err = req.Validate()
+	if err != nil {
+		return core.NewBadRequestError(fmt.Sprintf("invalid request: %v", err))
+	}
+
+	if approvalReq.MessageID != "" {
+		approvalState, err := s.ApprovalStorage.GetApprovalState(approvalReq.MessageID)
+		if err != nil {
+			return err
+		}
+
+		if approvalState != ApprovalStatePending {
+			return core.NewBadRequestError("approval already processed")
+		}
+
+		err = s.Email.RejectRequest(ctx, approvalReq.MessageID)
+		if err != nil {
+			return fmt.Errorf("failed to send approval request: %w", err)
+		}
+
+		err = s.ApprovalStorage.UpdateApprovalState(approvalReq.MessageID, ApprovalStateRejected)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = s.Queue.Put(ctx, req)

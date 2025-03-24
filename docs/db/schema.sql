@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS approvals (
+    message_id VARCHAR(255) PRIMARY KEY,
+    state VARCHAR(10) NOT NULL,
+    request_data JSON NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

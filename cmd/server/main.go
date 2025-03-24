@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,10 +11,13 @@ import (
 	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/approval"
 	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/email"
 	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/queue"
+	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/storage/mysql"
 	"github.com/ghazlabs/idn-remote-entry/internal/server/driven/token"
 	"github.com/ghazlabs/idn-remote-entry/internal/server/driver"
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/rmq"
 	"github.com/riandyrn/go-env"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 const (
@@ -29,6 +33,7 @@ const (
 	envKeySmtpFrom                 = "SMTP_FROM"
 	envKeySmtpPassword             = "SMTP_PASS"
 	envKeyApprovalJwtSecretKey     = "APPROVAL_JWT_SECRET_KEY"
+	envKeyMysqlDSN                 = "MYSQL_DSN"
 )
 
 func main() {
@@ -66,12 +71,26 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to initialize approval: %v", err)
 	}
+
+	mysqlClient, err := sql.Open("mysql", env.GetString(envKeyMysqlDSN))
+	if err != nil {
+		log.Fatalf("failed to initialize mysql client: %v", err)
+	}
+
+	approvalStorage, err := mysql.NewMySQLStorage(mysql.MySQLStorageConfig{
+		DB: mysqlClient,
+	})
+	if err != nil {
+		log.Fatalf("failed to initialize approval storage: %v", err)
+	}
+
 	// initialize service
 	svc, err := core.NewService(core.ServiceConfig{
-		Queue:     queue.NewQueue(rmqPub),
-		Email:     emailClient,
-		Tokenizer: tokenizer,
-		Approval:  approval,
+		Queue:           queue.NewQueue(rmqPub),
+		Email:           emailClient,
+		Tokenizer:       tokenizer,
+		Approval:        approval,
+		ApprovalStorage: approvalStorage,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize service: %v", err)

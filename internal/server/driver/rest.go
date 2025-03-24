@@ -43,6 +43,7 @@ func (a *API) GetHandler() http.Handler {
 	r.Get("/", a.serveIndex)
 	r.Post("/vacancies", a.serveSubmitVacancy)
 	r.Get("/vacancies/approve", a.serveApproveVacancy)
+	r.Get("/vacancies/reject", a.serveRejectVacancy)
 
 	return r
 }
@@ -85,7 +86,32 @@ func (a *API) serveApproveVacancy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := a.Service.HandleApprove(r.Context(), token)
+	messageID := r.URL.Query().Get("message_id")
+	err := a.Service.HandleApprove(r.Context(), core.ApprovalRequest{
+		TokenRequest: token,
+		MessageID:    messageID,
+	})
+	if err != nil {
+		render.Render(w, r, NewErrorResp(err))
+		return
+	}
+
+	// return the success response
+	render.Render(w, r, NewSuccessResp(nil))
+}
+
+func (a *API) serveRejectVacancy(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("data")
+	if token == "" {
+		render.Render(w, r, NewErrorResp(NewBadRequestError("token is required")))
+		return
+	}
+
+	messageID := r.URL.Query().Get("message_id")
+	err := a.Service.HandleReject(r.Context(), core.ApprovalRequest{
+		TokenRequest: token,
+		MessageID:    messageID,
+	})
 	if err != nil {
 		render.Render(w, r, NewErrorResp(err))
 		return

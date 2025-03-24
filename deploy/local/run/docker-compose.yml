@@ -14,11 +14,30 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
+  mysql:
+    image: bitnami/mysql:8.0
+    healthcheck:
+      test: "mysql --user=root --password=test1234 --execute \"SHOW DATABASES;\""
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    ports:
+      - 8306:3306
+    volumes:
+      - ../../../docs/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - mysql_data:/bitnami/mysql/data
+    environment:
+      - MYSQL_ROOT_PASSWORD=test1234
+      - MYSQL_DATABASE=idnremote
+
   server:
     build:
       context: ../../../
       dockerfile: ./build/package/server/Dockerfile
     depends_on:
+      mysql:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     environment:
@@ -34,6 +53,7 @@ services:
       - SMTP_FROM=${IDN_REMOTE_ENTRY_SMTP_FROM}
       - SMTP_PASS=${IDN_REMOTE_ENTRY_SMTP_PASS}
       - APPROVAL_JWT_SECRET_KEY=${IDN_REMOTE_ENTRY_APPROVAL_JWT_SECRET_KEY}
+      - MYSQL_DSN=root:test1234@tcp(mysql:3306)/idnremote?timeout=5s
     ports:
       - "9864:9864"
 
@@ -69,3 +89,4 @@ services:
 
 volumes:
   rabbitmq_data:
+  mysql_data:

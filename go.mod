@@ -11,6 +11,7 @@ require (
 	github.com/go-chi/cors v1.2.1
 	github.com/go-chi/render v1.0.3
 	github.com/go-resty/resty/v2 v2.16.2
+	github.com/go-sql-driver/mysql v1.6.0
 	github.com/invopop/jsonschema v0.13.0
 	github.com/openai/openai-go v0.1.0-alpha.43
 	github.com/riandyrn/go-env v1.1.1
