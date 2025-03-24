@@ -98,7 +98,7 @@ func (s *service) HandleApprove(ctx context.Context, approvalReq ApprovalRequest
 
 		err = s.ApprovalStorage.UpdateApprovalState(approvalReq.MessageID, ApprovalStateApproved)
 		if err != nil {
-			return fmt.Errorf("failed to update approval state: %w", err)
+			return err
 		}
 	}
 
@@ -138,7 +138,7 @@ func (s *service) HandleReject(ctx context.Context, approvalReq ApprovalRequest)
 
 		err = s.ApprovalStorage.UpdateApprovalState(approvalReq.MessageID, ApprovalStateRejected)
 		if err != nil {
-			return fmt.Errorf("failed to update approval state: %w", err)
+			return err
 		}
 	}
 
