@@ -29,7 +29,7 @@ services:
       - mysql_data:/bitnami/mysql/data
     environment:
       - MYSQL_ROOT_PASSWORD=test1234
-      - MYSQL_DATABASE=approvals
+      - MYSQL_DATABASE=idnremote
 
   server:
     build:
@@ -53,7 +53,7 @@ services:
       - SMTP_FROM=noreply@ghazlabs.com
       - SMTP_PASS=1234
       - APPROVAL_JWT_SECRET_KEY=topsecret
-      - MYSQL_DSN=root:test1234@tcp(mysql:3306)/approvals?timeout=5s
+      - MYSQL_DSN=root:test1234@tcp(mysql:3306)/idnremote?timeout=5s
     ports:
       - "9864:9864"
 
