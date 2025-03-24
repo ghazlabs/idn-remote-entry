@@ -13,4 +13,5 @@ const (
 	EnvKeyRabbitMQConn             = "TEST_RABBITMQ_CONN"
 	EnvKeyRabbitMQWaQueueName      = "TEST_RABBITMQ_WA_QUEUE_NAME"
 	EnvKeyRabbitMQVacancyQueueName = "TEST_RABBITMQ_VACANCY_QUEUE_NAME"
+	EnvKeyMysqlDsn                 = "TEST_MYSQL_DSN"
 )

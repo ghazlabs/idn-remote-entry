@@ -13,6 +13,22 @@ services:
       timeout: 10s
       retries: 3
 
+  mysql:
+    image: bitnami/mysql:8.0
+    healthcheck:
+      test: "mysql --user=root --password=test1234 --execute \"SHOW DATABASES;\""
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    ports:
+      - 8306:3306
+    volumes:
+      - ../../../docs/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    environment:
+      - MYSQL_ROOT_PASSWORD=test1234
+      - MYSQL_DATABASE=idnremote
+
   mailpit:
     image: axllent/mailpit:v1.12
     ports:
@@ -37,6 +53,7 @@ services:
       - TEST_RABBITMQ_CONN=amqp://guest:guest@rabbitmq:5672/
       - TEST_RABBITMQ_WA_QUEUE_NAME=wa_queue
       - TEST_RABBITMQ_VACANCY_QUEUE_NAME=vacancy_queue
+      - TEST_MYSQL_DSN=root:test1234@tcp(mysql:3306)/idnremote?timeout=5s
     entrypoint: "go test -timeout=3m -short ./..."
     volumes:
       - ../../../internal:/go/src/github.com/ghazlabs/idn-remote-entry/internal
