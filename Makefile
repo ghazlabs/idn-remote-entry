@@ -21,7 +21,7 @@ test-internal:
 # command for running the system for internal contributors, so the storage and notification service are real
 run-internal:
 	-docker compose -f ./deploy/local/run/docker-compose.yml down --remove-orphans
-	docker compose -f ./deploy/local/run/docker-compose.yml up --build --attach=server --attach=notification-worker --attach=vacancy-worker
+	docker compose -f ./deploy/local/run/docker-compose.yml up --build --attach=crawler--attach=server --attach=notification-worker --attach=vacancy-worker
 
 ## command for Batha server which run old AMI Linux version. In there there is no "docker compose".
 deploy-ec2:
