@@ -11,9 +11,9 @@ type Crawler interface {
 }
 
 type VacanciesStorage interface {
-	IsVacancyExists(ctx context.Context, vacancy core.Vacancy) bool
+	GetAllURLVacancies(ctx context.Context) (map[string]bool, error)
 }
 
 type Server interface {
-	SubmitVacancy(ctx context.Context, vacancy core.Vacancy) error
+	SubmitURLVacancy(ctx context.Context, applyURL string) error
 }
