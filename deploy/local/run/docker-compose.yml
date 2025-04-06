@@ -45,7 +45,7 @@ services:
       - SERVER_BASE_URL=http://server:9864
       - CRON_SCHEDULE="0 0 * * *" # every day at midnight
       - ENABLED_APPLICABLE_CHECKER_LLM=true
-	    - ENABLED_WEWORKREMOTELY_CRAWLER=true
+      - ENABLED_WEWORKREMOTELY_CRAWLER=true
 
   server:
     build:
