@@ -39,10 +39,10 @@ func (s *Server) SubmitURLVacancy(ctx context.Context, applyURL string) error {
 		SetBody(payload).
 		Post("/vacancies")
 	if err != nil {
-		return fmt.Errorf("failed to call api to save the vacancy: %w", err)
+		return fmt.Errorf("failed to call api to submit URL the vacancy: %w", err)
 	}
 	if resp.IsError() {
-		return fmt.Errorf("failed to save the vacancy: %s", resp.String())
+		return fmt.Errorf("failed to submit URL the vacancy: %s", resp.String())
 	}
 
 	return nil

@@ -133,8 +133,16 @@ func (p *WeWorkRemotelyCrawler) getInfo(ctx context.Context, url string) (core.V
 	// Extract job details
 	vacancy.JobTitle = strings.TrimSpace(doc.Find("h2.lis-container__header__hero__company-info__title").Text())
 	vacancy.CompanyName = strings.TrimSpace(doc.Find("div.lis-container__job__sidebar__companyDetails__info__title h3").Text())
-	vacancy.ShortDescription = strings.TrimSpace(doc.Find("div.lis-container__job__content__description").Text())
 	vacancy.ApplyURL, _ = doc.Find("a#job-cta-alt").Attr("href")
+
+	var descBuilder strings.Builder
+	doc.Find("div.lis-container__job__content__description").Children().Each(func(i int, s *goquery.Selection) {
+		text := strings.TrimSpace(s.Text())
+		if text != "" {
+			descBuilder.WriteString(text + "\n")
+		}
+	})
+	vacancy.ShortDescription = strings.TrimSpace(descBuilder.String())
 	// skip location and tags for now
 
 	return vacancy, nil
