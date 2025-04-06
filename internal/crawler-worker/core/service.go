@@ -16,6 +16,7 @@ type Service interface {
 type ServiceConfig struct {
 	Crawler        Crawler          `validate:"nonzero"`
 	VacancyStorage VacanciesStorage `validate:"nonzero"`
+	ContentChecker ContentChecker   `validate:"nonzero"`
 	Server         Server           `validate:"nonzero"`
 }
 
@@ -47,13 +48,25 @@ func (s *service) Run(ctx context.Context) error {
 		return fmt.Errorf("failed to get all urls vacancies: %w", err)
 	}
 
-	// filter out already existing vacancies
+	// filter the vacancies
 	filteredVacancies := make([]core.Vacancy, 0)
 	for _, v := range vacancies {
 		// check if vacancy already exists
 		if _, ok := allURLVacancies[v.ApplyURL]; ok {
 			continue
 		}
+
+		isApplicable, err := s.ContentChecker.IsApplicableForIndonesian(ctx, v)
+		if err != nil {
+			log.Printf("failed to check if vacancy is applicable for indonesian: %s, error: %v", v.ToJSON(), err)
+			// skip error
+			continue
+		}
+
+		if !isApplicable {
+			continue
+		}
+
 		filteredVacancies = append(filteredVacancies, v)
 	}
 
