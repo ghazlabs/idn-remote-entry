@@ -19,32 +19,36 @@ import (
 )
 
 const (
-	envKeyNotionDatabaseID = "NOTION_DATABASE_ID"
-	envKeyNotionToken      = "NOTION_TOKEN"
-	envKeyOpenAiKey        = "OPENAI_KEY"
-	envKeyServerAPIKey     = "SERVER_API_KEY"
-	envKeyServerBaseURL    = "SERVER_BASE_URL"
-	envKeyCronSchedule     = "CRON_SCHEDULE"
+	envKeyNotionDatabaseID             = "NOTION_DATABASE_ID"
+	envKeyNotionToken                  = "NOTION_TOKEN"
+	envKeyOpenAiKey                    = "OPENAI_KEY"
+	envKeyServerAPIKey                 = "SERVER_API_KEY"
+	envKeyServerBaseURL                = "SERVER_BASE_URL"
+	envKeyCronSchedule                 = "CRON_SCHEDULE"
+	envKeyEnabledApplicableChecker     = "ENABLED_APPLICABLE_CHECKER_LLM"
+	envKeyEnabledWeWorkRemotelyCrawler = "ENABLED_WEWORKREMOTELY_CRAWLER"
 )
 
 func main() {
 	// initialize crawler
-	wwrCrawler, err := registry.NewWeWorkRemotelyCrawler(registry.WeWorkRemotelyCrawlerConfig{
-		HttpClient: resty.New(),
-	})
-	if err != nil {
-		log.Fatalf("failed to initialize wwr crawler: %v", err)
-	}
-	wwrRegister := crawler.CrawlRegistry{
-		Name:    "weworkremotely",
-		Crawler: wwrCrawler,
+	crawlRegistryList := []crawler.CrawlRegistry{}
+	if env.GetBool(envKeyEnabledWeWorkRemotelyCrawler) {
+		wwrCrawler, err := registry.NewWeWorkRemotelyCrawler(registry.WeWorkRemotelyCrawlerConfig{
+			HttpClient: resty.New(),
+		})
+		if err != nil {
+			log.Fatalf("failed to initialize wwr crawler: %v", err)
+		}
+		wwrRegister := crawler.CrawlRegistry{
+			Name:    "weworkremotely",
+			Crawler: wwrCrawler,
+		}
+		crawlRegistryList = append(crawlRegistryList, wwrRegister)
 	}
 
 	// initialize resolver
 	crawlers, err := crawler.NewVacancyCrawler(crawler.VacancyResolverConfig{
-		CrawlerRegistries: []crawler.CrawlRegistry{
-			wwrRegister,
-		},
+		CrawlerRegistries: crawlRegistryList,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize resolver: %v", err)
@@ -80,10 +84,11 @@ func main() {
 
 	// initialize service
 	svc, err := core.NewService(core.ServiceConfig{
-		Crawler:        crawlers,
-		VacancyStorage: storage,
-		ContentChecker: contentChecker,
-		Server:         client,
+		Crawler:                  crawlers,
+		VacancyStorage:           storage,
+		ContentChecker:           contentChecker,
+		Server:                   client,
+		EnabledApplicableChecker: env.GetBool(envKeyEnabledApplicableChecker),
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize service: %v", err)

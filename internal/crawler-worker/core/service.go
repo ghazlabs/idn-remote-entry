@@ -18,6 +18,8 @@ type ServiceConfig struct {
 	VacancyStorage VacanciesStorage `validate:"nonzero"`
 	ContentChecker ContentChecker   `validate:"nonzero"`
 	Server         Server           `validate:"nonzero"`
+
+	EnabledApplicableChecker bool
 }
 
 func NewService(cfg ServiceConfig) (Service, error) {
@@ -56,15 +58,17 @@ func (s *service) Run(ctx context.Context) error {
 			continue
 		}
 
-		isApplicable, err := s.ContentChecker.IsApplicableForIndonesian(ctx, v)
-		if err != nil {
-			log.Printf("failed to check if vacancy is applicable for indonesian: %s, error: %v", v.ToJSON(), err)
-			// skip error
-			continue
-		}
+		if s.EnabledApplicableChecker {
+			isApplicable, err := s.ContentChecker.IsApplicableForIndonesian(ctx, v)
+			if err != nil {
+				log.Printf("failed to check if vacancy is applicable for indonesian: %s, error: %v", v.ToJSON(), err)
+				// skip error
+				continue
+			}
 
-		if !isApplicable {
-			continue
+			if !isApplicable {
+				continue
+			}
 		}
 
 		filteredVacancies = append(filteredVacancies, v)
