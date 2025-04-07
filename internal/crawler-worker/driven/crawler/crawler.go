@@ -50,7 +50,7 @@ func (r *VacancyCrawler) Crawl(ctx context.Context) ([]core.Vacancy, error) {
 				continue
 			}
 
-			if isEligible := isEligibleToSave(v); !isEligible {
+			if !isEligibleToSave(v) {
 				continue
 			}
 
