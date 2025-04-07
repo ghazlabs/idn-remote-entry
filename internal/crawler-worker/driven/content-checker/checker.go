@@ -33,8 +33,6 @@ func NewContentChecker(cfg CheckerConfig) (*Checker, error) {
 }
 
 func (c *Checker) IsApplicableForIndonesian(ctx context.Context, v core.Vacancy) (bool, error) {
-	// fmt.Printf("desc: %s\n", v.ShortDescription)
-
 	applicable, err := util.CallOpenAI[applicable](ctx, c.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{
 		openai.SystemMessage("I will give you unstructured text content of a remote vacancy, and you need to determine whether the vacancy is applicable for Indonesian (GMT +7) or not. Please answer with true or false."),
 		openai.UserMessage(v.ShortDescription),
@@ -42,8 +40,6 @@ func (c *Checker) IsApplicableForIndonesian(ctx context.Context, v core.Vacancy)
 	if err != nil {
 		return false, fmt.Errorf("unable to parse the vacancy information: %w", err)
 	}
-
-	fmt.Printf("applicable: %v\n", applicable)
 
 	return applicable.IsApplicableForIndonesia, nil
 }
