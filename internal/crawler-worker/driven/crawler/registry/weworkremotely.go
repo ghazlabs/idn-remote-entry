@@ -133,7 +133,12 @@ func (p *WeWorkRemotelyCrawler) getInfo(ctx context.Context, url string) (core.V
 	// Extract job details
 	vacancy.JobTitle = strings.TrimSpace(doc.Find("h2.lis-container__header__hero__company-info__title").Text())
 	vacancy.CompanyName = strings.TrimSpace(doc.Find("div.lis-container__job__sidebar__companyDetails__info__title h3").Text())
-	vacancy.ApplyURL, _ = doc.Find("a#job-cta-alt").Attr("href")
+	applyURL, _ := doc.Find("a#job-cta-alt").Attr("href")
+	if strings.HasPrefix(applyURL, "/job-seekers/account/") {
+		vacancy.ApplyURL = url
+	} else {
+		vacancy.ApplyURL = applyURL
+	}
 
 	var descBuilder strings.Builder
 	doc.Find("div.lis-container__job__content__description").Children().Each(func(i int, s *goquery.Selection) {
