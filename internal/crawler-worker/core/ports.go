@@ -21,3 +21,7 @@ type ContentChecker interface {
 type Server interface {
 	SubmitURLVacancy(ctx context.Context, applyURL string) error
 }
+
+type ApprovalStorage interface {
+	IsVacancyAlreadyRequested(ctx context.Context, applyURL string) (bool, error)
+}

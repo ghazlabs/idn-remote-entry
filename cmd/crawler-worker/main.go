@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 
@@ -10,12 +11,15 @@ import (
 	"github.com/ghazlabs/idn-remote-entry/internal/crawler-worker/driven/crawler"
 	"github.com/ghazlabs/idn-remote-entry/internal/crawler-worker/driven/crawler/registry"
 	"github.com/ghazlabs/idn-remote-entry/internal/crawler-worker/driven/server"
+	"github.com/ghazlabs/idn-remote-entry/internal/crawler-worker/driven/storage/mysql"
 	"github.com/ghazlabs/idn-remote-entry/internal/crawler-worker/driven/storage/notion"
 	"github.com/go-resty/resty/v2"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/riandyrn/go-env"
 	"github.com/robfig/cron/v3"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 const (
@@ -27,6 +31,7 @@ const (
 	envKeyCronSchedule                 = "CRON_SCHEDULE"
 	envKeyEnabledApplicableChecker     = "ENABLED_APPLICABLE_CHECKER_LLM"
 	envKeyEnabledWeWorkRemotelyCrawler = "ENABLED_WEWORKREMOTELY_CRAWLER"
+	envKeyMysqlDSN                     = "MYSQL_DSN"
 )
 
 func main() {
@@ -82,11 +87,29 @@ func main() {
 		log.Fatalf("failed to initialize server: %v", err)
 	}
 
+	// initialize approval storage
+	mysqlClient, err := sql.Open("mysql", env.GetString(envKeyMysqlDSN))
+	if err != nil {
+		log.Fatalf("failed to initialize mysql client: %v", err)
+	}
+
+	if err := mysqlClient.Ping(); err != nil {
+		log.Fatalf("failed to ping mysql client: %v", err)
+	}
+
+	approvalStorage, err := mysql.NewMySQLStorage(mysql.MySQLStorageConfig{
+		DB: mysqlClient,
+	})
+	if err != nil {
+		log.Fatalf("failed to initialize approval storage: %v", err)
+	}
+
 	// initialize service
 	svc, err := core.NewService(core.ServiceConfig{
 		Crawler:                  crawlers,
 		VacancyStorage:           storage,
 		ContentChecker:           contentChecker,
+		ApprovalStorage:          approvalStorage,
 		Server:                   client,
 		EnabledApplicableChecker: env.GetBool(envKeyEnabledApplicableChecker),
 	})
@@ -102,6 +125,7 @@ func main() {
 		if err != nil {
 			log.Printf("failed to run service: %v", err)
 		}
+		fmt.Println("Scheduled task completed")
 	})
 
 	// Start the cron scheduler
