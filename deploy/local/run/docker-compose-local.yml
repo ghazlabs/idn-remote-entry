@@ -36,8 +36,12 @@ services:
       context: ../../../
       dockerfile: ./build/package/crawler-worker/Dockerfile
     depends_on:
-      - server
+      server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
     environment:
+      # todo: support local database
       - NOTION_DATABASE_ID=${IDN_REMOTE_ENTRY_NOTION_DATABASE_ID_DEV} # this is dev table
       - NOTION_TOKEN=${IDN_REMOTE_ENTRY_NOTION_TOKEN}
       - OPENAI_KEY=${IDN_REMOTE_ENTRY_OPENAI_KEY}
@@ -46,6 +50,7 @@ services:
       - CRON_SCHEDULE=${IDN_REMOTE_ENTRY_CRAWLER_SCHEDULE:-0 0 * * *} # Default to run every day at midnight
       - ENABLED_APPLICABLE_CHECKER_LLM=true
       - ENABLED_WEWORKREMOTELY_CRAWLER=true
+      - MYSQL_DSN=root:test1234@tcp(mysql:3306)/idnremote?timeout=5s
 
   server:
     build:

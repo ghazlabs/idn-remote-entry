@@ -55,9 +55,11 @@ func (s *service) Run(ctx context.Context) error {
 	for _, v := range vacancies {
 		// check if vacancy already exists
 		if _, ok := allURLVacancies[v.ApplyURL]; ok {
+			// skip if vacancy already exists
 			continue
 		}
 
+		// check if vacancy already requested (avoid duplicate request)
 		isRequested, err := s.ApprovalStorage.IsVacancyAlreadyRequested(ctx, v.ApplyURL)
 		if err != nil {
 			log.Printf("failed to check if vacancy is already requested: %s, error: %v", v.ToJSON(), err)
@@ -68,6 +70,7 @@ func (s *service) Run(ctx context.Context) error {
 			continue
 		}
 
+		// check if vacancy is applicable for Indonesian
 		if s.EnabledApplicableChecker {
 			isApplicable, err := s.ContentChecker.IsApplicableForIndonesian(ctx, v)
 			if err != nil {
