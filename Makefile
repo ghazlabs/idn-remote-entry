@@ -7,7 +7,7 @@ test:
 # command for running the system for open contributors, so the storage and notification service are mocked
 run:
 	-docker compose -f ./deploy/local/run/docker-compose-local.yml down --remove-orphans
-	docker compose -f ./deploy/local/run/docker-compose-local.yml up --build --attach=server --attach=notification-worker --attach=vacancy-worker
+	docker compose -f ./deploy/local/run/docker-compose-local.yml up --build --attach=server --attach=notification-worker --attach=vacancy-worker --attach=crawler
 
 # command to see the vacancies list saved in mocked storage (which is a jsonl file)
 list-jobs:

@@ -31,6 +31,22 @@ services:
       - MYSQL_ROOT_PASSWORD=test1234
       - MYSQL_DATABASE=idnremote
 
+  crawler:
+    build:
+      context: ../../../
+      dockerfile: ./build/package/crawler-worker/Dockerfile
+    depends_on:
+      - server
+    environment:
+      - NOTION_DATABASE_ID=${IDN_REMOTE_ENTRY_NOTION_DATABASE_ID_DEV} # this is dev table
+      - NOTION_TOKEN=${IDN_REMOTE_ENTRY_NOTION_TOKEN}
+      - OPENAI_KEY=${IDN_REMOTE_ENTRY_OPENAI_KEY}
+      - SERVER_API_KEY=d2e97dca-1131-4344-af0a-b3406e7ecb06
+      - SERVER_BASE_URL=http://server:9864
+      - CRON_SCHEDULE=0 0 * * * # every day at midnight
+      - ENABLED_APPLICABLE_CHECKER_LLM=true
+      - ENABLED_WEWORKREMOTELY_CRAWLER=true
+
   server:
     build:
       context: ../../../
