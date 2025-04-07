@@ -3,6 +3,7 @@ package crawler
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"gopkg.in/validator.v2"
@@ -36,17 +37,26 @@ func NewVacancyCrawler(cfg VacancyResolverConfig) (*VacancyCrawler, error) {
 }
 
 func (r *VacancyCrawler) Crawl(ctx context.Context) ([]core.Vacancy, error) {
-	vacancies := make([]core.Vacancy, 0)
+	allVacancies := make([]core.Vacancy, 0)
+
 	for _, reg := range r.CrawlerRegistries {
+		log.Printf("Starting to crawl from %s", reg.Name)
+
 		vac, err := reg.Crawler.Crawl(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to crawl from %s due to: %w", reg.Name, err)
 		}
 
+		log.Printf("Found %d vacancies from %s", len(vac), reg.Name)
+
+		// Track vacancies from this crawler only
+		crawlerVacancies := make([]core.Vacancy, 0)
+
 		for _, v := range vac {
 			err = v.Validate()
 			// skip invalid vacancy
 			if err != nil {
+				log.Printf("Skipping invalid vacancy from %s: %v", reg.Name, err)
 				continue
 			}
 
@@ -54,9 +64,13 @@ func (r *VacancyCrawler) Crawl(ctx context.Context) ([]core.Vacancy, error) {
 				continue
 			}
 
-			vacancies = append(vacancies, v)
+			crawlerVacancies = append(crawlerVacancies, v)
 		}
+
+		log.Printf("Added %d valid vacancies from %s", len(crawlerVacancies), reg.Name)
+		allVacancies = append(allVacancies, crawlerVacancies...)
 	}
 
-	return vacancies, nil
+	log.Printf("Total valid vacancies from all crawlers: %d", len(allVacancies))
+	return allVacancies, nil
 }
