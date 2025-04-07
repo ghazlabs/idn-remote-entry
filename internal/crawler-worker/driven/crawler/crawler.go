@@ -49,8 +49,13 @@ func (r *VacancyCrawler) Crawl(ctx context.Context) ([]core.Vacancy, error) {
 			if err != nil {
 				continue
 			}
+
+			if isEligible := isEligibleToSave(v); !isEligible {
+				continue
+			}
+
+			vacancies = append(vacancies, v)
 		}
-		vacancies = append(vacancies, vac...)
 	}
 
 	return vacancies, nil
