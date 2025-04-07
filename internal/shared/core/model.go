@@ -24,6 +24,11 @@ func (r Vacancy) Validate() error {
 	return nil
 }
 
+func (v Vacancy) ToJSON() []byte {
+	data, _ := json.Marshal(v)
+	return data
+}
+
 type VacancyRecord struct {
 	ID        string `json:"id"`
 	PublicURL string `json:"public_url"`
