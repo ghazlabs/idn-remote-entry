@@ -34,8 +34,11 @@ func NewContentChecker(cfg CheckerConfig) (*Checker, error) {
 
 func (c *Checker) IsApplicable(ctx context.Context, v core.Vacancy) (bool, error) {
 	applicable, err := util.CallOpenAI[applicable](ctx, c.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{
-		openai.SystemMessage("You are a job vacancy checker that check its description if the vacancy is applicable to apply or not. The vacancy should be in engineering like software engineer or creative job such as designer. The job needs to be full remote or applicable for Indonesian talent that live in timezone GMT+7 and GMT+8. If you are unsure about the vacancy, consider it as not applicable."),
-		openai.UserMessage(v.ShortDescription),
+		openai.SystemMessage("I will give you job position and its description, check if the vacancy is applicable to apply or not. The vacancy should be in engineering like software engineer or creative job such as designer and the job needs to be full remote and applicable for Indonesian talent that live in timezone GMT+7 and GMT+8. If you are unsure about the vacancy, consider it as not applicable."),
+		openai.UserMessage(fmt.Sprintf(`Job Title: %s
+
+Description:
+%s`, v.JobTitle, v.ShortDescription)),
 	})
 	if err != nil {
 		return false, fmt.Errorf("unable to parse the vacancy information: %w", err)
