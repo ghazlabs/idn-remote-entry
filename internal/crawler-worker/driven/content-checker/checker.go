@@ -11,7 +11,7 @@ import (
 )
 
 type applicable struct {
-	IsApplicableForIndonesia bool `json:"is_applicable" jsonschema_description:"Is the vacancy applicable for Indonesian."`
+	IsApplicable bool `json:"is_applicable" jsonschema_description:"Is the vacancy applicable to apply."`
 }
 
 type Checker struct {
@@ -32,14 +32,14 @@ func NewContentChecker(cfg CheckerConfig) (*Checker, error) {
 	}, nil
 }
 
-func (c *Checker) IsApplicableForIndonesian(ctx context.Context, v core.Vacancy) (bool, error) {
+func (c *Checker) IsApplicable(ctx context.Context, v core.Vacancy) (bool, error) {
 	applicable, err := util.CallOpenAI[applicable](ctx, c.OpenaAiClient, []openai.ChatCompletionMessageParamUnion{
-		openai.SystemMessage("I will give you unstructured text content of a remote vacancy, and you need to determine whether the vacancy is applicable for Indonesian (GMT +7) or not. Please answer with true or false."),
+		openai.SystemMessage("You are a job vacancy checker that check its description if the vacancy is applicable to apply or not. The vacancy should be in engineering like software engineer or creative job such as designer. The job needs to be full remote or applicable for Indonesian talent that live in timezone GMT+7 and GMT+8. If you are unsure about the vacancy, consider it as not applicable."),
 		openai.UserMessage(v.ShortDescription),
 	})
 	if err != nil {
 		return false, fmt.Errorf("unable to parse the vacancy information: %w", err)
 	}
 
-	return applicable.IsApplicableForIndonesia, nil
+	return applicable.IsApplicable, nil
 }

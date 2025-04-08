@@ -72,7 +72,7 @@ func (s *service) Run(ctx context.Context) error {
 
 		// check if vacancy is applicable for Indonesian
 		if s.EnabledApplicableChecker {
-			isApplicable, err := s.ContentChecker.IsApplicableForIndonesian(ctx, v)
+			isApplicable, err := s.ContentChecker.IsApplicable(ctx, v)
 			if err != nil {
 				log.Printf("failed to check if vacancy is applicable for indonesian: %s, error: %v", v.ToJSON(), err)
 				// skip error

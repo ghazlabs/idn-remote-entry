@@ -15,7 +15,7 @@ type VacanciesStorage interface {
 }
 
 type ContentChecker interface {
-	IsApplicableForIndonesian(ctx context.Context, v core.Vacancy) (bool, error)
+	IsApplicable(ctx context.Context, v core.Vacancy) (bool, error)
 }
 
 type Server interface {
