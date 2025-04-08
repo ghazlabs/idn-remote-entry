@@ -7,6 +7,7 @@ require gopkg.in/validator.v2 v2.0.1
 require (
 	github.com/PuerkitoBio/goquery v1.10.1
 	github.com/chromedp/chromedp v0.11.2
+	github.com/forPelevin/gomoji v1.3.0
 	github.com/go-chi/chi/v5 v5.2.0
 	github.com/go-chi/cors v1.2.1
 	github.com/go-chi/render v1.0.3
@@ -18,6 +19,8 @@ require (
 	github.com/stretchr/testify v1.8.1
 	github.com/wagslane/go-rabbitmq v0.15.0
 )
+
+require github.com/rivo/uniseg v0.4.7 // indirect
 
 require (
 	github.com/ajg/form v1.5.1 // indirect
