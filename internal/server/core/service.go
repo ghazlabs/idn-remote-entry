@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"gopkg.in/validator.v2"
@@ -41,6 +42,10 @@ func (s *service) HandleRequest(ctx context.Context, req core.SubmitRequest) err
 	err := req.Validate()
 	if err != nil {
 		return core.NewBadRequestError(fmt.Sprintf("invalid request: %v", err))
+	}
+
+	if req.SubmissionType == core.SubmitTypeBulk {
+		return s.handleBulkRequest(ctx, req)
 	}
 
 	token, err := s.Tokenizer.EncodeRequest(req)
@@ -140,6 +145,38 @@ func (s *service) HandleReject(ctx context.Context, approvalReq ApprovalRequest)
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (s *service) handleBulkRequest(ctx context.Context, bulkReq core.SubmitRequest) error {
+	tokenReqs := make([]string, 0)
+	for _, v := range bulkReq.BulkVacancy {
+		req := core.SubmitRequest{
+			// for now we only support URL submission in bulk request
+			SubmissionType:  core.SubmitTypeURL,
+			SubmissionEmail: bulkReq.SubmissionEmail,
+			Vacancy:         v,
+		}
+
+		token, err := s.Tokenizer.EncodeRequest(req)
+		if err != nil {
+			log.Printf("failed to encode token: %v", err)
+			continue
+		}
+		tokenReqs = append(tokenReqs, token)
+	}
+
+	// For bulk request, we need to send approval request to admin
+	messageIDs, err := s.Email.SendBulkApprovalRequest(ctx, bulkReq, tokenReqs)
+	if err != nil {
+		return fmt.Errorf("failed to send approval request: %w", err)
+	}
+
+	err = s.ApprovalStorage.SaveBulkApprovalRequest(ctx, bulkReq, messageIDs)
+	if err != nil {
+		return fmt.Errorf("failed to save approval request: %w", err)
 	}
 
 	return nil

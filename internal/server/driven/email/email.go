@@ -49,6 +49,30 @@ func (e *EmailClient) SendApprovalRequest(ctx context.Context, req core.SubmitRe
 	return messageID, nil
 }
 
+func (e *EmailClient) SendBulkApprovalRequest(ctx context.Context, req core.SubmitRequest, tokenReqVacancies []string) ([]string, error) {
+	messageID := generateMessageID("bulk")
+	codeID := getCodeMessageID(messageID)
+	headers := e.buildHeaders(messageID, "", fmt.Sprintf("IDNRemote.com - New Crawled Job Vacancy Approval - ID: %s", codeID))
+
+	messagesIDs := make([]string, len(req.BulkVacancy))
+	for i, _ := range req.BulkVacancy {
+		messagesIDs[i] = generateMessageID("bulk")
+	}
+
+	body := templateBulkEmail{
+		req:            req,
+		tokenVacancies: tokenReqVacancies,
+		messagesIDs:    messagesIDs,
+		serverDomain:   e.ServerDomain,
+	}
+
+	if err := e.sendEmail(headers, messageID, body.getContentBodyHTML(), body.getContentBodyPlain()); err != nil {
+		return nil, err
+	}
+
+	return messagesIDs, nil
+}
+
 func (e *EmailClient) ApproveRequest(ctx context.Context, messageID string) error {
 	message := "Approved by admin"
 	codeID := getCodeMessageID(messageID)

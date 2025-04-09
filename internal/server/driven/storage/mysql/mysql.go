@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -69,5 +70,39 @@ func (s *MySQLStorage) SaveApprovalRequest(messageID string, req shcore.SubmitRe
 	if err != nil {
 		return fmt.Errorf("failed to save approval request: %w", err)
 	}
+	return nil
+}
+
+func (s *MySQLStorage) SaveBulkApprovalRequest(ctx context.Context, req shcore.SubmitRequest, messageIDs []string) error {
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	// Prepare the query for bulk insertion
+	query := fmt.Sprintf("INSERT INTO %s (message_id, state, request_data) VALUES (?, ?, ?)", tableApproval)
+	stmt, err := tx.PrepareContext(ctx, query)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	// Save each message ID with the corresponding request data
+	for _, messageID := range messageIDs {
+		data := req.ToJSON()
+		_, err := stmt.ExecContext(ctx, messageID, core.ApprovalStatePending, data)
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to save bulk approval request: %w", err)
+		}
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
 	return nil
 }
