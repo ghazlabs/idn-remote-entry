@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"gopkg.in/validator.v2"
@@ -96,14 +97,17 @@ func (s *service) HandleApprove(ctx context.Context, approvalReq ApprovalRequest
 			return core.NewBadRequestError("approval already processed")
 		}
 
-		err = s.Email.ApproveRequest(ctx, approvalReq.MessageID)
-		if err != nil {
-			return fmt.Errorf("failed to send approval request: %w", err)
-		}
-
 		err = s.ApprovalStorage.UpdateApprovalState(approvalReq.MessageID, ApprovalStateApproved)
 		if err != nil {
 			return err
+		}
+
+		// if bulk request, we dont need to send approval email
+		if !strings.Contains(approvalReq.MessageID, "bulk") {
+			err = s.Email.ApproveRequest(ctx, approvalReq.MessageID)
+			if err != nil {
+				return fmt.Errorf("failed to send approval request: %w", err)
+			}
 		}
 	}
 
@@ -136,14 +140,17 @@ func (s *service) HandleReject(ctx context.Context, approvalReq ApprovalRequest)
 			return core.NewBadRequestError("approval already processed")
 		}
 
-		err = s.Email.RejectRequest(ctx, approvalReq.MessageID)
-		if err != nil {
-			return fmt.Errorf("failed to send approval request: %w", err)
-		}
-
 		err = s.ApprovalStorage.UpdateApprovalState(approvalReq.MessageID, ApprovalStateRejected)
 		if err != nil {
 			return err
+		}
+
+		// if bulk request, we dont need to send rejection email
+		if !strings.Contains(approvalReq.MessageID, "bulk") {
+			err = s.Email.RejectRequest(ctx, approvalReq.MessageID)
+			if err != nil {
+				return fmt.Errorf("failed to send approval request: %w", err)
+			}
 		}
 	}
 
