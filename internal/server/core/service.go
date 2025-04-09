@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"gopkg.in/validator.v2"
@@ -43,6 +44,10 @@ func (s *service) HandleRequest(ctx context.Context, req core.SubmitRequest) err
 		return core.NewBadRequestError(fmt.Sprintf("invalid request: %v", err))
 	}
 
+	if req.SubmissionType == core.SubmitTypeBulk {
+		return s.handleBulkRequest(ctx, req)
+	}
+
 	token, err := s.Tokenizer.EncodeRequest(req)
 	if err != nil {
 		return fmt.Errorf("failed to encode token: %w", err)
@@ -54,7 +59,7 @@ func (s *service) HandleRequest(ctx context.Context, req core.SubmitRequest) err
 			return fmt.Errorf("failed to send approval request: %w", err)
 		}
 
-		err = s.ApprovalStorage.SaveApprovalRequest(messageID, req)
+		err = s.ApprovalStorage.SaveApprovalRequest(ctx, messageID, req)
 		if err != nil {
 			return fmt.Errorf("failed to save approval request: %w", err)
 		}
@@ -82,7 +87,7 @@ func (s *service) HandleApprove(ctx context.Context, approvalReq ApprovalRequest
 	}
 
 	if approvalReq.MessageID != "" {
-		approvalState, err := s.ApprovalStorage.GetApprovalState(approvalReq.MessageID)
+		approvalState, err := s.ApprovalStorage.GetApprovalState(ctx, approvalReq.MessageID)
 		if err != nil {
 			return err
 		}
@@ -91,14 +96,18 @@ func (s *service) HandleApprove(ctx context.Context, approvalReq ApprovalRequest
 			return core.NewBadRequestError("approval already processed")
 		}
 
-		err = s.Email.ApproveRequest(ctx, approvalReq.MessageID)
-		if err != nil {
-			return fmt.Errorf("failed to send approval request: %w", err)
-		}
-
-		err = s.ApprovalStorage.UpdateApprovalState(approvalReq.MessageID, ApprovalStateApproved)
+		err = s.ApprovalStorage.UpdateApprovalState(ctx, approvalReq.MessageID, ApprovalStateApproved)
 		if err != nil {
 			return err
+		}
+
+		// if bulk request, we dont need to send approval email
+		// TODO: this is not the best way to check if this is a bulk request, use explicit function
+		if !strings.Contains(approvalReq.MessageID, "bulk") {
+			err = s.Email.ApproveRequest(ctx, approvalReq.MessageID)
+			if err != nil {
+				return fmt.Errorf("failed to send approval request: %w", err)
+			}
 		}
 	}
 
@@ -122,7 +131,7 @@ func (s *service) HandleReject(ctx context.Context, approvalReq ApprovalRequest)
 	}
 
 	if approvalReq.MessageID != "" {
-		approvalState, err := s.ApprovalStorage.GetApprovalState(approvalReq.MessageID)
+		approvalState, err := s.ApprovalStorage.GetApprovalState(ctx, approvalReq.MessageID)
 		if err != nil {
 			return err
 		}
@@ -131,15 +140,50 @@ func (s *service) HandleReject(ctx context.Context, approvalReq ApprovalRequest)
 			return core.NewBadRequestError("approval already processed")
 		}
 
-		err = s.Email.RejectRequest(ctx, approvalReq.MessageID)
-		if err != nil {
-			return fmt.Errorf("failed to send approval request: %w", err)
-		}
-
-		err = s.ApprovalStorage.UpdateApprovalState(approvalReq.MessageID, ApprovalStateRejected)
+		err = s.ApprovalStorage.UpdateApprovalState(ctx, approvalReq.MessageID, ApprovalStateRejected)
 		if err != nil {
 			return err
 		}
+
+		// if bulk request, we dont need to send rejection email
+		// TODO: this is not the best way to check if this is a bulk request, use explicit function
+		if !strings.Contains(approvalReq.MessageID, "bulk") {
+			err = s.Email.RejectRequest(ctx, approvalReq.MessageID)
+			if err != nil {
+				return fmt.Errorf("failed to send approval request: %w", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *service) handleBulkRequest(ctx context.Context, bulkReq core.SubmitRequest) error {
+	tokenReqs := make([]string, 0)
+	for _, v := range bulkReq.BulkVacancies {
+		req := core.SubmitRequest{
+			// for now we only support URL submission in bulk request
+			SubmissionType:  core.SubmitTypeURL,
+			SubmissionEmail: bulkReq.SubmissionEmail,
+			Vacancy:         v,
+		}
+
+		token, err := s.Tokenizer.EncodeRequest(req)
+		if err != nil {
+			return fmt.Errorf("failed to encode token for vacancy %v: %w", v, err)
+		}
+		tokenReqs = append(tokenReqs, token)
+	}
+
+	// For bulk request, we need to send approval request to admin
+	messageIDs, err := s.Email.SendBulkApprovalRequest(ctx, bulkReq, tokenReqs)
+	if err != nil {
+		return fmt.Errorf("failed to send approval request: %w", err)
+	}
+
+	err = s.ApprovalStorage.SaveBulkApprovalRequest(ctx, bulkReq, messageIDs)
+	if err != nil {
+		return fmt.Errorf("failed to save approval request: %w", err)
 	}
 
 	return nil

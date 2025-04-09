@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"gopkg.in/validator.v2"
 )
 
@@ -52,6 +53,7 @@ func (s *service) Run(ctx context.Context) error {
 		return fmt.Errorf("failed to get all urls vacancies: %w", err)
 	}
 
+	filterVacancies := make([]core.Vacancy, 0)
 	for _, v := range vacancies {
 		// check if vacancy already exists
 		if _, ok := allURLVacancies[v.ApplyURL]; ok {
@@ -60,19 +62,19 @@ func (s *service) Run(ctx context.Context) error {
 		}
 
 		// check if vacancy already requested (avoid duplicate request)
-		isRequested, err := s.ApprovalStorage.IsVacancyAlreadyRequested(ctx, v.ApplyURL)
+		isAlreadyRequested, err := s.ApprovalStorage.IsVacancyAlreadyRequested(ctx, v.ApplyURL)
 		if err != nil {
 			log.Printf("failed to check if vacancy is already requested: %s, error: %v", v.ToJSON(), err)
 			// skip error
 			continue
 		}
-		if isRequested {
+		if isAlreadyRequested {
 			continue
 		}
 
 		// check if vacancy is applicable for Indonesian
 		if s.EnabledApplicableChecker {
-			isApplicable, err := s.ContentChecker.IsApplicableForIndonesian(ctx, v)
+			isApplicable, err := s.ContentChecker.IsApplicable(ctx, v)
 			if err != nil {
 				log.Printf("failed to check if vacancy is applicable for indonesian: %s, error: %v", v.ToJSON(), err)
 				// skip error
@@ -84,12 +86,18 @@ func (s *service) Run(ctx context.Context) error {
 			}
 		}
 
-		err = s.Server.SubmitURLVacancy(ctx, v.ApplyURL)
-		if err != nil {
-			log.Printf("failed to submit vacancy: %s, error: %v", v.ToJSON(), err)
-			// skip error
-			continue
-		}
+		// add vacancy to filter vacancies
+		filterVacancies = append(filterVacancies, v)
+	}
+
+	if len(filterVacancies) == 0 {
+		log.Println("no vacancies to submit")
+		return nil
+	}
+
+	err = s.Server.SubmitBulkVacancies(ctx, filterVacancies)
+	if err != nil {
+		return fmt.Errorf("failed to submit bulk vacancies: %w", err)
 	}
 
 	return nil

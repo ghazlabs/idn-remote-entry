@@ -12,6 +12,7 @@ type Queue interface {
 
 type EmailClient interface {
 	SendApprovalRequest(ctx context.Context, req core.SubmitRequest, tokenReq string) (string, error)
+	SendBulkApprovalRequest(ctx context.Context, req core.SubmitRequest, tokenReqVacancies []string) ([]string, error)
 	ApproveRequest(ctx context.Context, messageID string) error
 	RejectRequest(ctx context.Context, messageID string) error
 }
@@ -26,7 +27,8 @@ type Approval interface {
 }
 
 type ApprovalStorage interface {
-	GetApprovalState(messageID string) (ApprovalState, error)
-	UpdateApprovalState(messageID string, state ApprovalState) error
-	SaveApprovalRequest(messageID string, req core.SubmitRequest) error
+	GetApprovalState(ctx context.Context, messageID string) (ApprovalState, error)
+	UpdateApprovalState(ctx context.Context, messageID string, state ApprovalState) error
+	SaveApprovalRequest(ctx context.Context, messageID string, req core.SubmitRequest) error
+	SaveBulkApprovalRequest(ctx context.Context, req core.SubmitRequest, messageIDs []string) error
 }
