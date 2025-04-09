@@ -95,7 +95,7 @@ func (e *EmailClient) buildHeaders(messageID, inReplyTo, subject string) map[str
 	}
 
 	if messageID != "" {
-		headers["Message-ID"] = messageID
+		headers["Message-ID"] = fmt.Sprintf("<%s>", messageID)
 	}
 	if inReplyTo != "" {
 		headers["In-Reply-To"] = inReplyTo

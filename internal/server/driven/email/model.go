@@ -24,12 +24,11 @@ func generateMessageID(suffix string) string {
 	for i, v := range b {
 		b[i] = possibleChars[v%byte(len(possibleChars))]
 	}
-	return fmt.Sprintf("<%s@%s>", string(b), suffix)
+	return fmt.Sprintf("%s@%s", string(b), suffix)
 }
 
 func getCodeMessageID(messageID string) string {
-	ID := strings.TrimPrefix(messageID, "<")
-	ID = strings.Split(ID, "@")[0]
+	ID := strings.Split(messageID, "@")[0]
 	return ID
 }
 
