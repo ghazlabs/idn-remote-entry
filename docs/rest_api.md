@@ -146,8 +146,6 @@ This endpoint is used to submit bulk vacancies for processing. This is a batch s
 
 For bulk submission, the system will always send approval to the admin. The system will not check if the email is in approved list. For each action on vacancy, the system will treat the vacancy as URL Submission and will not reply to the email.
 
-This e
-
 **Headers:**
 
 | Field          | Type   | Required | Description                                    |

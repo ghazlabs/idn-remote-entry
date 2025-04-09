@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
@@ -103,6 +102,7 @@ func (s *service) HandleApprove(ctx context.Context, approvalReq ApprovalRequest
 		}
 
 		// if bulk request, we dont need to send approval email
+		// TODO: this is not the best way to check if this is a bulk request, use explicit function
 		if !strings.Contains(approvalReq.MessageID, "bulk") {
 			err = s.Email.ApproveRequest(ctx, approvalReq.MessageID)
 			if err != nil {
@@ -146,6 +146,7 @@ func (s *service) HandleReject(ctx context.Context, approvalReq ApprovalRequest)
 		}
 
 		// if bulk request, we dont need to send rejection email
+		// TODO: this is not the best way to check if this is a bulk request, use explicit function
 		if !strings.Contains(approvalReq.MessageID, "bulk") {
 			err = s.Email.RejectRequest(ctx, approvalReq.MessageID)
 			if err != nil {
@@ -169,8 +170,7 @@ func (s *service) handleBulkRequest(ctx context.Context, bulkReq core.SubmitRequ
 
 		token, err := s.Tokenizer.EncodeRequest(req)
 		if err != nil {
-			log.Printf("failed to encode token: %v", err)
-			continue
+			return fmt.Errorf("failed to encode token for vacancy %v: %w", v, err)
 		}
 		tokenReqs = append(tokenReqs, token)
 	}
