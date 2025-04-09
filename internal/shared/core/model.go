@@ -57,16 +57,16 @@ type SubmitRequest struct {
 	SubmissionType  SubmitType `json:"submission_type"`
 	SubmissionEmail string     `json:"submission_email"`
 	Retries         int        `json:"retries"`
-	BulkVacancy     []Vacancy  `json:"bulk_vacancy,omitempty"`
+	BulkVacancies   []Vacancy  `json:"bulk_vacancies,omitempty"`
 	Vacancy
 }
 
 func (r SubmitRequest) Validate() error {
 	if r.SubmissionType == SubmitTypeBulk {
-		if len(r.BulkVacancy) == 0 {
-			return fmt.Errorf("bulk_vacancy cannot be empty")
+		if len(r.BulkVacancies) == 0 {
+			return fmt.Errorf("bulk_vacancies cannot be empty")
 		}
-		for _, v := range r.BulkVacancy {
+		for _, v := range r.BulkVacancies {
 			// Validate each vacancy in the bulk submission
 			if err := v.Validate(); err != nil {
 				return fmt.Errorf("invalid bulk vacancy: %w", err)

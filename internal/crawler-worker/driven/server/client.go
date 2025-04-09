@@ -32,7 +32,7 @@ func (s *Server) SubmitBulkVacancies(ctx context.Context, vacancies []core.Vacan
 	payload := map[string]interface{}{
 		"submission_type":  "bulk",
 		"submission_email": "crawler",
-		"bulk_vacancy":     vacancies,
+		"bulk_vacancies":   vacancies,
 	}
 	resp, err := s.HttpClient.R().
 		SetHeader("Content-Type", "application/json").

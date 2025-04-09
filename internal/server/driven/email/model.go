@@ -85,7 +85,7 @@ func (t templateBulkEmail) getDetail(format contentFormat) string {
 	var content strings.Builder
 	fmt.Fprintf(&content, "Submission From: %s%s", req.SubmissionEmail, lineBreak)
 	fmt.Fprintf(&content, "Submission Type: Bulk%s", lineBreak)
-	fmt.Fprintf(&content, "Number of Vacancies: %d%s", len(req.BulkVacancy), lineBreak)
+	fmt.Fprintf(&content, "Number of Vacancies: %d%s", len(req.BulkVacancies), lineBreak)
 
 	return content.String()
 }
@@ -106,7 +106,7 @@ func (t templateBulkEmail) getVacanciesTable(format contentFormat) string {
     </thead>
     <tbody>`)
 
-		for i, vacancy := range t.req.BulkVacancy {
+		for i, vacancy := range t.req.BulkVacancies {
 			rowStyle := ""
 			if i%2 == 1 {
 				rowStyle = `style="background-color: #f9f9f9;"`
@@ -149,7 +149,7 @@ func (t templateBulkEmail) getVacanciesTable(format contentFormat) string {
 	var tablePlain strings.Builder
 	tablePlain.WriteString("\nVacancies to review:\n\n")
 
-	for i, vacancy := range t.req.BulkVacancy {
+	for i, vacancy := range t.req.BulkVacancies {
 		approveLink := fmt.Sprintf("%s/vacancies/approve?data=%s&message_id=%s", t.serverDomain, t.tokenVacancies[i], t.messagesIDs[i])
 		rejectLink := fmt.Sprintf("%s/vacancies/reject?data=%s&message_id=%s", t.serverDomain, t.tokenVacancies[i], t.messagesIDs[i])
 

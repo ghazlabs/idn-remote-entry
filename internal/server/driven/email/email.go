@@ -54,8 +54,8 @@ func (e *EmailClient) SendBulkApprovalRequest(ctx context.Context, req core.Subm
 	codeID := getCodeMessageID(messageID)
 	headers := e.buildHeaders(messageID, "", fmt.Sprintf("IDNRemote.com - New Crawled Job Vacancy Approval - ID: %s", codeID))
 
-	messagesIDs := make([]string, len(req.BulkVacancy))
-	for i, _ := range req.BulkVacancy {
+	messagesIDs := make([]string, len(req.BulkVacancies))
+	for i, _ := range req.BulkVacancies {
 		messagesIDs[i] = generateMessageID("bulk")
 	}
 

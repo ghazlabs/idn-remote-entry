@@ -36,7 +36,7 @@ func TestServiceHandleRequest(t *testing.T) {
 			request: shcore.SubmitRequest{
 				SubmissionType:  shcore.SubmitTypeBulk,
 				SubmissionEmail: "crawler",
-				BulkVacancy: []shcore.Vacancy{
+				BulkVacancies: []shcore.Vacancy{
 					{
 						JobTitle:    "Test 1",
 						CompanyName: "Test 1 Company",
