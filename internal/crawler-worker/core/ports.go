@@ -19,7 +19,7 @@ type ContentChecker interface {
 }
 
 type Server interface {
-	SubmitURLVacancy(ctx context.Context, applyURL string) error
+	SubmitBulkVacancies(ctx context.Context, vacancies []core.Vacancy) error
 }
 
 type ApprovalStorage interface {
