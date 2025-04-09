@@ -60,7 +60,7 @@ func (s *service) HandleRequest(ctx context.Context, req core.SubmitRequest) err
 			return fmt.Errorf("failed to send approval request: %w", err)
 		}
 
-		err = s.ApprovalStorage.SaveApprovalRequest(messageID, req)
+		err = s.ApprovalStorage.SaveApprovalRequest(ctx, messageID, req)
 		if err != nil {
 			return fmt.Errorf("failed to save approval request: %w", err)
 		}
@@ -88,7 +88,7 @@ func (s *service) HandleApprove(ctx context.Context, approvalReq ApprovalRequest
 	}
 
 	if approvalReq.MessageID != "" {
-		approvalState, err := s.ApprovalStorage.GetApprovalState(approvalReq.MessageID)
+		approvalState, err := s.ApprovalStorage.GetApprovalState(ctx, approvalReq.MessageID)
 		if err != nil {
 			return err
 		}
@@ -97,7 +97,7 @@ func (s *service) HandleApprove(ctx context.Context, approvalReq ApprovalRequest
 			return core.NewBadRequestError("approval already processed")
 		}
 
-		err = s.ApprovalStorage.UpdateApprovalState(approvalReq.MessageID, ApprovalStateApproved)
+		err = s.ApprovalStorage.UpdateApprovalState(ctx, approvalReq.MessageID, ApprovalStateApproved)
 		if err != nil {
 			return err
 		}
@@ -131,7 +131,7 @@ func (s *service) HandleReject(ctx context.Context, approvalReq ApprovalRequest)
 	}
 
 	if approvalReq.MessageID != "" {
-		approvalState, err := s.ApprovalStorage.GetApprovalState(approvalReq.MessageID)
+		approvalState, err := s.ApprovalStorage.GetApprovalState(ctx, approvalReq.MessageID)
 		if err != nil {
 			return err
 		}
@@ -140,7 +140,7 @@ func (s *service) HandleReject(ctx context.Context, approvalReq ApprovalRequest)
 			return core.NewBadRequestError("approval already processed")
 		}
 
-		err = s.ApprovalStorage.UpdateApprovalState(approvalReq.MessageID, ApprovalStateRejected)
+		err = s.ApprovalStorage.UpdateApprovalState(ctx, approvalReq.MessageID, ApprovalStateRejected)
 		if err != nil {
 			return err
 		}

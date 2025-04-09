@@ -60,7 +60,7 @@ func TestServiceHandleRequest(t *testing.T) {
 				e.On("SendApprovalRequest", ctx, mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == "submitter@example.com"
 				}), "mock-token").Return("mock-message-id", nil)
-				s.On("SaveApprovalRequest", "mock-message-id", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
+				s.On("SaveApprovalRequest", ctx, "mock-message-id", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == "submitter@example.com"
 				})).Return(nil)
 			},
@@ -87,7 +87,7 @@ func TestServiceHandleRequest(t *testing.T) {
 				e.On("SendApprovalRequest", ctx, mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == "submitter@example.com"
 				}), "mock-token").Return("mock-message-id", nil)
-				s.On("SaveApprovalRequest", "mock-message-id", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
+				s.On("SaveApprovalRequest", ctx, "mock-message-id", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == "submitter@example.com"
 				})).Return(nil)
 			},
@@ -109,7 +109,7 @@ func TestServiceHandleRequest(t *testing.T) {
 				e.On("SendApprovalRequest", ctx, mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == ""
 				}), "mock-token").Return("mock-message-id", nil)
-				s.On("SaveApprovalRequest", "mock-message-id", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
+				s.On("SaveApprovalRequest", ctx, "mock-message-id", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == ""
 				})).Return(nil)
 			},
@@ -136,7 +136,7 @@ func TestServiceHandleRequest(t *testing.T) {
 				e.On("SendApprovalRequest", ctx, mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == ""
 				}), "mock-token").Return("mock-message-id", nil)
-				s.On("SaveApprovalRequest", "mock-message-id", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
+				s.On("SaveApprovalRequest", ctx, "mock-message-id", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == ""
 				})).Return(nil)
 			},
@@ -244,9 +244,9 @@ func TestServiceHandleApprove(t *testing.T) {
 					},
 				}
 				tok.On("DecodeToken", "test-token").Return(req, nil)
-				s.On("GetApprovalState", "test-message").Return(core.ApprovalStatePending, nil)
+				s.On("GetApprovalState", ctx, "test-message").Return(core.ApprovalStatePending, nil)
 				e.On("ApproveRequest", ctx, "test-message").Return(nil)
-				s.On("UpdateApprovalState", "test-message", core.ApprovalStateApproved).Return(nil)
+				s.On("UpdateApprovalState", ctx, "test-message", core.ApprovalStateApproved).Return(nil)
 				q.On("Put", ctx, req).Return(nil)
 			},
 			request: core.ApprovalRequest{
@@ -277,7 +277,7 @@ func TestServiceHandleApprove(t *testing.T) {
 					SubmissionEmail: "test@example.com",
 				}
 				tok.On("DecodeToken", "test-token").Return(req, nil)
-				s.On("GetApprovalState", "test-message").Return(core.ApprovalStateApproved, nil)
+				s.On("GetApprovalState", ctx, "test-message").Return(core.ApprovalStateApproved, nil)
 			},
 			request: core.ApprovalRequest{
 				MessageID:    "test-message",
@@ -350,9 +350,9 @@ func TestServiceHandleReject(t *testing.T) {
 					},
 				}
 				tok.On("DecodeToken", "test-token").Return(req, nil)
-				s.On("GetApprovalState", "test-message").Return(core.ApprovalStatePending, nil)
+				s.On("GetApprovalState", ctx, "test-message").Return(core.ApprovalStatePending, nil)
 				e.On("RejectRequest", ctx, "test-message").Return(nil)
-				s.On("UpdateApprovalState", "test-message", core.ApprovalStateRejected).Return(nil)
+				s.On("UpdateApprovalState", ctx, "test-message", core.ApprovalStateRejected).Return(nil)
 			},
 			request: core.ApprovalRequest{
 				MessageID:    "test-message",
@@ -381,7 +381,7 @@ func TestServiceHandleReject(t *testing.T) {
 					SubmissionEmail: "test@example.com",
 				}
 				tok.On("DecodeToken", "test-token").Return(req, nil)
-				s.On("GetApprovalState", "test-message").Return(core.ApprovalStateRejected, nil)
+				s.On("GetApprovalState", ctx, "test-message").Return(core.ApprovalStateRejected, nil)
 			},
 			request: core.ApprovalRequest{
 				MessageID:    "test-message",
@@ -495,18 +495,18 @@ type mockApprovalStorage struct {
 	mock.Mock
 }
 
-func (m *mockApprovalStorage) GetApprovalState(messageID string) (core.ApprovalState, error) {
-	args := m.Called(messageID)
+func (m *mockApprovalStorage) GetApprovalState(ctx context.Context, messageID string) (core.ApprovalState, error) {
+	args := m.Called(ctx, messageID)
 	return args.Get(0).(core.ApprovalState), args.Error(1)
 }
 
-func (m *mockApprovalStorage) UpdateApprovalState(messageID string, state core.ApprovalState) error {
-	args := m.Called(messageID, state)
+func (m *mockApprovalStorage) UpdateApprovalState(ctx context.Context, messageID string, state core.ApprovalState) error {
+	args := m.Called(ctx, messageID, state)
 	return args.Error(0)
 }
 
-func (m *mockApprovalStorage) SaveApprovalRequest(messageID string, req shcore.SubmitRequest) error {
-	args := m.Called(messageID, req)
+func (m *mockApprovalStorage) SaveApprovalRequest(ctx context.Context, messageID string, req shcore.SubmitRequest) error {
+	args := m.Called(ctx, messageID, req)
 	return args.Error(0)
 }
 

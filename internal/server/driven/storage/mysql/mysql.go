@@ -32,10 +32,10 @@ func NewMySQLStorage(cfg MySQLStorageConfig) (*MySQLStorage, error) {
 	}, nil
 }
 
-func (s *MySQLStorage) GetApprovalState(messageID string) (core.ApprovalState, error) {
+func (s *MySQLStorage) GetApprovalState(ctx context.Context, messageID string) (core.ApprovalState, error) {
 	var state string
 	query := fmt.Sprintf("SELECT state FROM %s WHERE message_id = ?", tableApproval)
-	err := s.DB.QueryRow(query, messageID).Scan(&state)
+	err := s.DB.QueryRowContext(ctx, query, messageID).Scan(&state)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return "", shcore.NewBadRequestError("approval not found")
@@ -45,9 +45,9 @@ func (s *MySQLStorage) GetApprovalState(messageID string) (core.ApprovalState, e
 	return core.ApprovalState(state), nil
 }
 
-func (s *MySQLStorage) UpdateApprovalState(messageID string, state core.ApprovalState) error {
+func (s *MySQLStorage) UpdateApprovalState(ctx context.Context, messageID string, state core.ApprovalState) error {
 	query := fmt.Sprintf("UPDATE %s SET state = ? WHERE message_id = ?", tableApproval)
-	result, err := s.DB.Exec(query, state, messageID)
+	result, err := s.DB.ExecContext(ctx, query, state, messageID)
 	if err != nil {
 		return fmt.Errorf("failed to update approval state: %w", err)
 	}
@@ -63,10 +63,10 @@ func (s *MySQLStorage) UpdateApprovalState(messageID string, state core.Approval
 	return nil
 }
 
-func (s *MySQLStorage) SaveApprovalRequest(messageID string, req shcore.SubmitRequest) error {
+func (s *MySQLStorage) SaveApprovalRequest(ctx context.Context, messageID string, req shcore.SubmitRequest) error {
 	data := req.ToJSON()
 	query := fmt.Sprintf("INSERT INTO %s (message_id, state, request_data) VALUES (?, ?, ?)", tableApproval)
-	_, err := s.DB.Exec(query, messageID, core.ApprovalStatePending, data)
+	_, err := s.DB.ExecContext(ctx, query, messageID, core.ApprovalStatePending, data)
 	if err != nil {
 		return fmt.Errorf("failed to save approval request: %w", err)
 	}
