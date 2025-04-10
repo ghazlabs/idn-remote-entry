@@ -71,7 +71,7 @@ func (w *Worker) Run() error {
 		}
 
 		defer func() {
-			log.Printf("handled vacancy %s in %s\n", d.Body, time.Since(startTime))
+			log.Printf("handled notification %s in %s\n", d.Body, time.Since(startTime))
 		}()
 
 		return rabbitmq.Ack

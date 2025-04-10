@@ -74,6 +74,11 @@ func (s *MySQLStorage) SaveApprovalRequest(ctx context.Context, messageID string
 }
 
 func (s *MySQLStorage) SaveBulkApprovalRequest(ctx context.Context, req shcore.SubmitRequest, messageIDs []string) error {
+	// Validate the request
+	if len(req.BulkVacancies) != len(messageIDs) {
+		return fmt.Errorf("number of vacancies must match number of message IDs")
+	}
+
 	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
