@@ -50,19 +50,16 @@ func (w *Worker) Run() error {
 		// handle the message
 		log.Printf("handling vacancy (attempt %d) %s\n", req.Retries+1, d.Body)
 		startTime := time.Now()
-		defer func() {
-			log.Printf("handled vacancy %s in %v\n", d.Body, time.Since(startTime))
-		}()
 		err = w.Config.Service.Handle(ctx, req)
 		if err != nil {
 			// output error and sleep for 1 second
-			log.Printf("failed to handle request (attempt %d) %+v: %v, sleeping for 1 second...\n", req.Retries+1, req, err)
+			log.Printf("failed to handle request (attempt %d) %s: %s, sleeping for 1 second...\n", req.Retries+1, req, err)
 			time.Sleep(1 * time.Second)
 
 			// increment retry count
 			req.Retries++
 			if req.Retries >= 3 {
-				log.Printf("discarding request after %d retries: %+v\n", req.Retries, req)
+				log.Printf("discarding request after %d retries: %s\n", req.Retries, req)
 				return rabbitmq.NackDiscard
 			}
 
@@ -72,6 +69,10 @@ func (w *Worker) Run() error {
 			// discard the original message since we've published new one
 			return rabbitmq.NackDiscard
 		}
+
+		defer func() {
+			log.Printf("handled vacancy %s in %s\n", d.Body, time.Since(startTime))
+		}()
 
 		return rabbitmq.Ack
 	})
