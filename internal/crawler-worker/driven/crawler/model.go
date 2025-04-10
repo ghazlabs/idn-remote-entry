@@ -1,15 +1,21 @@
 package crawler
 
 import (
-	"strings"
+	"net/url"
 
 	"github.com/forPelevin/gomoji"
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 )
 
 func isEligibleToSave(vacancy core.Vacancy) bool {
-	// Check if the vacancy has a valid ApplyURL
-	return !strings.Contains(vacancy.ApplyURL, "/cdn-cgi/l/email-protection")
+	// Parse the URL to validate it
+	u, err := url.Parse(vacancy.ApplyURL)
+	if err != nil {
+		return false
+	}
+
+	// Check if URL has https scheme
+	return u.Scheme == "https"
 }
 
 func removeUnwantedText(text string) string {

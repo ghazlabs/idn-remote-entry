@@ -74,6 +74,11 @@ func (s *MySQLStorage) SaveApprovalRequest(ctx context.Context, messageID string
 }
 
 func (s *MySQLStorage) SaveBulkApprovalRequest(ctx context.Context, req shcore.SubmitRequest, messageIDs []string) error {
+	// Validate the request
+	if len(req.BulkVacancies) != len(messageIDs) {
+		return fmt.Errorf("number of vacancies must match number of message IDs")
+	}
+
 	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -89,9 +94,13 @@ func (s *MySQLStorage) SaveBulkApprovalRequest(ctx context.Context, req shcore.S
 	defer stmt.Close()
 
 	// Save each message ID with the corresponding request data
-	for _, messageID := range messageIDs {
-		data := req.ToJSON()
-		_, err := stmt.ExecContext(ctx, messageID, core.ApprovalStatePending, data)
+	for idx, messageID := range messageIDs {
+		data := shcore.SubmitRequest{
+			SubmissionType:  req.SubmissionType,
+			SubmissionEmail: req.SubmissionEmail,
+			Vacancy:         req.BulkVacancies[idx],
+		}
+		_, err := stmt.ExecContext(ctx, messageID, core.ApprovalStatePending, data.ToJSON())
 		if err != nil {
 			tx.Rollback()
 			return fmt.Errorf("failed to save bulk approval request: %w", err)

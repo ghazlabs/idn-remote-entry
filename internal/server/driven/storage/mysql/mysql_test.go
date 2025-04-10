@@ -119,3 +119,72 @@ func TestSaveApprovalRequest(t *testing.T) {
 	err = storage.SaveApprovalRequest(ctx, messageID, req)
 	assert.Error(t, err)
 }
+
+func TestSaveBulkApprovalRequest(t *testing.T) {
+	ctx := context.Background()
+	db := setupTestDB(t)
+	defer db.Close()
+
+	storage, err := NewMySQLStorage(MySQLStorageConfig{DB: db})
+	require.NoError(t, err)
+
+	// Create test data with multiple vacancies
+	messageIDs := []string{"bulk-msg-1", "bulk-msg-2", "bulk-msg-3"}
+	req := sharedcore.SubmitRequest{
+		SubmissionType:  sharedcore.SubmitTypeManual,
+		SubmissionEmail: "crawler",
+		BulkVacancies: []sharedcore.Vacancy{
+			{
+				JobTitle:    "Frontend Developer",
+				CompanyName: "Company A",
+				ApplyURL:    "https://example.com/apply/a",
+			},
+			{
+				JobTitle:    "Backend Developer",
+				CompanyName: "Company B",
+				ApplyURL:    "https://example.com/apply/b",
+			},
+			{
+				JobTitle:    "DevOps Engineer",
+				CompanyName: "Company C",
+				ApplyURL:    "https://example.com/apply/c",
+			},
+		},
+	}
+
+	// Test case: Validation error - mismatched array lengths
+	invalidReq := req
+	invalidReq.BulkVacancies = invalidReq.BulkVacancies[:2] // Only 2 vacancies but 3 message IDs
+	err = storage.SaveBulkApprovalRequest(ctx, invalidReq, messageIDs)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "number of vacancies must match")
+
+	// Test case: Successful bulk insertion
+	err = storage.SaveBulkApprovalRequest(ctx, req, messageIDs)
+	assert.NoError(t, err)
+
+	// Verify all requests were saved correctly
+	for i, messageID := range messageIDs {
+		var (
+			state       string
+			requestData []byte
+		)
+		err = db.QueryRow("SELECT state, request_data FROM approvals WHERE message_id = ?", messageID).
+			Scan(&state, &requestData)
+		require.NoError(t, err)
+
+		// Create expected individual request for comparison
+		expectedReq := sharedcore.SubmitRequest{
+			SubmissionType:  req.SubmissionType,
+			SubmissionEmail: req.SubmissionEmail,
+			Vacancy:         req.BulkVacancies[i],
+		}
+
+		assert.Equal(t, string(core.ApprovalStatePending), state)
+		assert.JSONEq(t, string(expectedReq.ToJSON()), string(requestData))
+	}
+
+	// Test case: Duplicate insertion (should fail due to primary key constraint)
+	err = storage.SaveBulkApprovalRequest(ctx, req, messageIDs)
+	assert.Error(t, err)
+}
