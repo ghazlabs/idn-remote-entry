@@ -53,13 +53,13 @@ func (w *Worker) Run() error {
 		err = w.Config.Service.Handle(ctx, n)
 		if err != nil {
 			// output error and sleep for 1 second
-			log.Printf("failed to handle notification (attempt %d) %s: %s, sleeping for 1 second...\n", n.Retries+1, n, err)
+			log.Printf("failed to handle notification (attempt %d) %s: %s, sleeping for 1 second...\n", n.Retries+1, n.ToJSON(), err)
 			time.Sleep(1 * time.Second)
 
 			// increment retry count
 			n.Retries++
 			if n.Retries >= 3 {
-				log.Printf("discarding notification after %d retries: %s\n", n.Retries, n)
+				log.Printf("discarding notification after %d retries: %s\n", n.Retries, n.ToJSON())
 				return rabbitmq.NackDiscard
 			}
 

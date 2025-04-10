@@ -53,13 +53,13 @@ func (w *Worker) Run() error {
 		err = w.Config.Service.Handle(ctx, req)
 		if err != nil {
 			// output error and sleep for 1 second
-			log.Printf("failed to handle request (attempt %d) %s: %s, sleeping for 1 second...\n", req.Retries+1, req, err)
+			log.Printf("failed to handle request (attempt %d) %s: %s, sleeping for 1 second...\n", req.Retries+1, req.ToJSON(), err)
 			time.Sleep(1 * time.Second)
 
 			// increment retry count
 			req.Retries++
 			if req.Retries >= 3 {
-				log.Printf("discarding request after %d retries: %s\n", req.Retries, req)
+				log.Printf("discarding request after %d retries: %s\n", req.Retries, req.ToJSON())
 				return rabbitmq.NackDiscard
 			}
 
