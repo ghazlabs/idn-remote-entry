@@ -161,11 +161,13 @@ func (s *service) HandleReject(ctx context.Context, approvalReq ApprovalRequest)
 func (s *service) handleBulkRequest(ctx context.Context, bulkReq core.SubmitRequest) error {
 	tokenReqs := make([]string, 0)
 	for _, v := range bulkReq.BulkVacancies {
+		// for now we only support URL submission in bulk request
 		req := core.SubmitRequest{
-			// for now we only support URL submission in bulk request
 			SubmissionType:  core.SubmitTypeURL,
 			SubmissionEmail: bulkReq.SubmissionEmail,
-			Vacancy:         v,
+			Vacancy: core.Vacancy{
+				ApplyURL: v.ApplyURL,
+			},
 		}
 
 		token, err := s.Tokenizer.EncodeRequest(req)

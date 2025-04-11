@@ -8,8 +8,8 @@ import (
 )
 
 type Vacancy struct {
-	JobTitle         string   `json:"job_title" validate:"nonzero"`
-	CompanyName      string   `json:"company_name" validate:"nonzero"`
+	JobTitle         string   `json:"job_title,omitempty" validate:"nonzero"`
+	CompanyName      string   `json:"company_name,omitempty" validate:"nonzero"`
 	CompanyLocation  string   `json:"company_location,omitempty"`
 	ShortDescription string   `json:"short_description,omitempty"`
 	RelevantTags     []string `json:"relevant_tags,omitempty"`

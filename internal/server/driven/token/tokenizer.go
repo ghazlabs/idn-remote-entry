@@ -1,7 +1,6 @@
 package token
 
 import (
-	"encoding/base64"
 	"fmt"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
@@ -39,8 +38,7 @@ func (t *Tokenizer) EncodeRequest(req core.SubmitRequest) (string, error) {
 		return "", fmt.Errorf("failed to sign token due to: %w", err)
 	}
 
-	encodedToken := base64.URLEncoding.EncodeToString([]byte(tokenString))
-	return encodedToken, nil
+	return tokenString, nil
 }
 
 func (t *Tokenizer) DecodeToken(tokenStr string) (core.SubmitRequest, error) {
@@ -53,12 +51,7 @@ func (t *Tokenizer) DecodeToken(tokenStr string) (core.SubmitRequest, error) {
 }
 
 func (t *Tokenizer) parseJWT(tokenStr string) (jwt.MapClaims, error) {
-	decoded, err := base64.URLEncoding.DecodeString(tokenStr)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode base64 token: %w", err)
-	}
-
-	token, err := jwt.Parse(string(decoded), func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(string(tokenStr), func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
