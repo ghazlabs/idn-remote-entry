@@ -50,7 +50,8 @@ services:
       - CRON_SCHEDULE=${IDN_REMOTE_ENTRY_CRAWLER_SCHEDULE:-0 0 * * *} # Default to run every day at midnight
       - ENABLED_APPLICABLE_CHECKER_LLM=true
       - ENABLED_WEWORKREMOTELY_CRAWLER=true
-      - MYSQL_DSN=root:test1234@tcp(mysql:3306)/idnremote?timeout=5s
+      - ENABLED_GOLANGPROJECTS_CRAWLER=true
+      - MYSQL_DSN=root:test1234@tcp(mysql:3306)/idnremote?parseTime=true&timeout=5s
 
   server:
     build:

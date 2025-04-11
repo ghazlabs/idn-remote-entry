@@ -31,6 +31,7 @@ const (
 	envKeyCronSchedule                 = "CRON_SCHEDULE"
 	envKeyEnabledApplicableChecker     = "ENABLED_APPLICABLE_CHECKER_LLM"
 	envKeyEnabledWeWorkRemotelyCrawler = "ENABLED_WEWORKREMOTELY_CRAWLER"
+	envKeyEnabledGolangProjectsCrawler = "ENABLED_GOLANGPROJECTS_CRAWLER"
 	envKeyMysqlDSN                     = "MYSQL_DSN"
 )
 
@@ -44,11 +45,30 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to initialize wwr crawler: %v", err)
 		}
+
 		wwrRegister := crawler.CrawlRegistry{
 			Name:    "weworkremotely",
 			Crawler: wwrCrawler,
 		}
+
 		crawlRegistryList = append(crawlRegistryList, wwrRegister)
+
+	}
+
+	if env.GetBool(envKeyEnabledGolangProjectsCrawler) {
+		golangProjectsCrawler, err := registry.NewGolangProjectsCrawler(registry.GolangProjectsCrawlerConfig{
+			HttpClient: resty.New(),
+		})
+		if err != nil {
+			log.Fatalf("failed to initialize golangprojects crawler: %v", err)
+		}
+
+		golangProjectsRegister := crawler.CrawlRegistry{
+			Name:    "golangprojects",
+			Crawler: golangProjectsCrawler,
+		}
+		
+		crawlRegistryList = append(crawlRegistryList, golangProjectsRegister)
 	}
 
 	// initialize resolver

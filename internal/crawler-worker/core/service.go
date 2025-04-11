@@ -53,6 +53,8 @@ func (s *service) Run(ctx context.Context) error {
 		return fmt.Errorf("failed to get all urls vacancies: %w", err)
 	}
 
+	log.Printf("total vacancies in storage: %d", len(allURLVacancies))
+
 	filterVacancies := make([]core.Vacancy, 0)
 	for _, v := range vacancies {
 		// check if vacancy already exists
@@ -68,6 +70,7 @@ func (s *service) Run(ctx context.Context) error {
 			// skip error
 			continue
 		}
+		
 		if isAlreadyRequested {
 			continue
 		}

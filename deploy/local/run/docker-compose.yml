@@ -46,6 +46,7 @@ services:
       - CRON_SCHEDULE=${IDN_REMOTE_ENTRY_CRAWLER_SCHEDULE:-0 0 * * *} # Default to run every day at midnight
       - ENABLED_APPLICABLE_CHECKER_LLM=true
       - ENABLED_WEWORKREMOTELY_CRAWLER=true
+      - ENABLED_GOLANGPROJECTS_CRAWLER=true
 
   server:
     build:
