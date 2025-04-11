@@ -69,6 +69,7 @@ func (a *API) serveSubmitVacancy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// handle the request
+	req = prepareSubmitVacancyRequest(req)
 	err = a.Service.HandleRequest(r.Context(), req)
 	if err != nil {
 		render.Render(w, r, NewErrorResp(err))

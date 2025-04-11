@@ -9,6 +9,7 @@ For authenticating the call, client is expected to submit predefined API key in 
 - [REST API](#rest-api)
   - [Submit Manual Vacancy](#submit-manual-vacancy)
   - [Submit URL Vacancy](#submit-url-vacancy)
+  - [Submit Bulk Vacancies](#submit-bulk-vacancies)
   - [Approve Vacancy as Admin](#approve-vacancy-as-admin)
   - [Reject Vacancy as Admin](#reject-vacancy-as-admin)
   - [System Errors](#system-errors)
@@ -137,6 +138,72 @@ Content-Type: application/json
 
 [Back to Top](#rest-api)
 
+## Submit Bulk Vacancies
+
+POST: `/vacancies`
+
+This endpoint is used to submit bulk vacancies for processing. This is a batch submission where the client submits multiple vacancies in a single request. This intended to be used for crawler. The vacancies are expected to have job title, company name and apply URL.
+
+For bulk submission, the system will always send approval to the admin. The system will not check if the email is in approved list. For each action on vacancy, the system will treat the vacancy as URL Submission and will not reply to the email.
+
+**Headers:**
+
+| Field          | Type   | Required | Description                                    |
+| -------------- | ------ | -------- | ---------------------------------------------- |
+| `X-Api-Key`    | String | Yes      | The API Key for authenticating the call.       |
+| `Content-Type` | String | Yes      | The only accepted value is `application/json`. |
+
+**Body Payload:**
+
+| Field              | Type                | Required | Description                                                                           |
+| ------------------ | ------------------- | -------- | ------------------------------------------------------------------------------------- |
+| `submission_type`  | String              | Yes      | The value is `bulk`.                                                                 |
+| `submission_email` | String              | No       | The email of submitter.                                                              |
+| `bulk_vacancies`   | Array of Vacancy    | Yes      | Array of vacancy objects, each containing `job_title`, `company_name`, and `apply_url`.   |
+
+> Note:
+>
+> if `submission_email` is provided, system will check if the email is in approved list. If not provided or not in approved list, the request will be pending until it receives approval by the admin.
+
+**Example Call:**
+
+```json
+POST /vacancies
+X-Api-Key: 1ba9d286-20d3-43a0-b31b-013486d375a0
+Content-Type: application/json
+
+{
+  "submission_type": "bulk",
+  "submission_email": "crawler",
+  "bulk_vacancies": [
+    {
+      "job_title": "Software Engineer",
+      "company_name": "Haraj",
+      "apply_url": "https://www.haraj.com/jobs/haraj-software-engineer"
+    },
+    {
+      "job_title": "Machine Learning Engineer",
+      "company_name": "IDNRemote",
+      "apply_url": "https://idnremote.com"
+    }
+  ]
+}
+```
+
+**Success Response:**
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "ok": true,
+  "ts": 1735432224
+}
+```
+
+[Back to Top](#rest-api)
+
 ## Approve Vacancy as Admin
 
 GET: `/vacancies/approve`
@@ -155,7 +222,7 @@ A successful call indicates that the vacancy has been approved and ready to be p
 **Example Call:**
 
 ```bash
-GET /vacancies/approve?data=?data=ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnlaWFJ5YVdWeklqb3dMQ0p6ZFdKdGFYTnphVzl1WDJWdFlXbHNJam9pWVcxbGMyVnJZV2x6Wld0aGQyRnVRR2R0WVdsc0xtTnZiU0lzSW5OMVltMXBjM05wYjI1ZmRIbHdaU0k2SW0xaGJuVmhiQ0lzSW5aaFkyRnVZM2tpT25zaWFtOWlYM1JwZEd4bElqb2lSblZzYkZOMFlXTnJJRk52Wm5SM1lYSmxJRVZ1WjJsdVpXVnlJaXdpWTI5dGNHRnVlVjl1WVcxbElqb2lXbVZ5YnlCSGNtRjJhWFI1SWl3aVkyOXRjR0Z1ZVY5c2IyTmhkR2x2YmlJNklreHZibVJ2Yml3Z1ZVc2lMQ0p6YUc5eWRGOWtaWE5qY21sd2RHbHZiaUk2SWxwbGNtOGdSM0poZG1sMGVTQW9lbVZ5YjJkeVlYWnBkSGt1WTI4dWRXc3BJR2x6SUdFZ1ZVc3RZbUZ6WldRZ2MzUmhjblIxY0NCM2FYUm9JR0VnYldsemMybHZiaUIwYnlCb1pXeHdJR3h2ZHkxcGJtTnZiV1VnYzNSMVpHVnVkSE1nWjJWMElHbHVkRzhnZEc5d0lIVnVhWFpsY25OcGRHbGxjeUJoYm1RZ1kyRnlaV1Z5Y3k0Z1hISmNibHh5WEc1WFpTQmhjbVVnYkc5dmEybHVaeUIwYnlCbGVIQmhibVFnYjNWeUlHVnVaMmx1WldWeWFXNW5JSFJsWVcwZ2FXNGdNakF5TlM0Z1NYUWdkMmxzYkNCaVpTQmhJR1oxYkd4NUlISmxiVzkwWlNCeWIyeGxJR1p5YjIwZ1lXNTVkMmhsY21VZ2FXNGdTVzVrYjI1bGMybGhMQ0J6ZEdGeWRHbHVaeUIzYVhSb0lHRWdOaTF0YjI1MGFDQmpiMjUwY21GamRDQjBhR0YwSUdOaGJpQmlaU0JsZUhSbGJtUmxaQ0IwYnlCaElIbGxZWElnYjNJZ2JXOXlaUzRpTENKeVpXeGxkbUZ1ZEY5MFlXZHpJanBiSW5KMVlua2diMjRnY21GcGJITWlMQ0ptZFd4c0lITjBZV05ySUdSbGRtVnNiM0J0Wlc1MElpd2ljM2x6ZEdWdElHUmxjMmxuYmlJc0ltRndhU0JwYm5SbFozSmhkR2x2YmlJc0luTjBZWEowZFhBaVhTd2lZWEJ3YkhsZmRYSnNJam9pWkdWaVltbGxRSHBsY205bmNtRjJhWFI1TG1OdkxuVnJJbjE5LkRzVExLeWNhVEVZU3laaWp3U1BEMXVMWjd4ZFA1VHBFX3dveTVJZ1NlOVk=&message_id=%3Ctcath05dmq@idnremote.com%3E
+GET /vacancies/approve?data=?data=ZXl...&message_id=tcath05dmq@idnremote.com
 ```
 
 **Success Response:**
@@ -190,7 +257,7 @@ A successful call indicates that the vacancy has been rejected and will be ignor
 **Example Call:**
 
 ```bash
-GET /vacancies/reject?data=?data=ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnlaWFJ5YVdWeklqb3dMQ0p6ZFdKdGFYTnphVzl1WDJWdFlXbHNJam9pWVcxbGMyVnJZV2x6Wld0aGQyRnVRR2R0WVdsc0xtTnZiU0lzSW5OMVltMXBjM05wYjI1ZmRIbHdaU0k2SW0xaGJuVmhiQ0lzSW5aaFkyRnVZM2tpT25zaWFtOWlYM1JwZEd4bElqb2lSblZzYkZOMFlXTnJJRk52Wm5SM1lYSmxJRVZ1WjJsdVpXVnlJaXdpWTI5dGNHRnVlVjl1WVcxbElqb2lXbVZ5YnlCSGNtRjJhWFI1SWl3aVkyOXRjR0Z1ZVY5c2IyTmhkR2x2YmlJNklreHZibVJ2Yml3Z1ZVc2lMQ0p6YUc5eWRGOWtaWE5qY21sd2RHbHZiaUk2SWxwbGNtOGdSM0poZG1sMGVTQW9lbVZ5YjJkeVlYWnBkSGt1WTI4dWRXc3BJR2x6SUdFZ1ZVc3RZbUZ6WldRZ2MzUmhjblIxY0NCM2FYUm9JR0VnYldsemMybHZiaUIwYnlCb1pXeHdJR3h2ZHkxcGJtTnZiV1VnYzNSMVpHVnVkSE1nWjJWMElHbHVkRzhnZEc5d0lIVnVhWFpsY25OcGRHbGxjeUJoYm1RZ1kyRnlaV1Z5Y3k0Z1hISmNibHh5WEc1WFpTQmhjbVVnYkc5dmEybHVaeUIwYnlCbGVIQmhibVFnYjNWeUlHVnVaMmx1WldWeWFXNW5JSFJsWVcwZ2FXNGdNakF5TlM0Z1NYUWdkMmxzYkNCaVpTQmhJR1oxYkd4NUlISmxiVzkwWlNCeWIyeGxJR1p5YjIwZ1lXNTVkMmhsY21VZ2FXNGdTVzVrYjI1bGMybGhMQ0J6ZEdGeWRHbHVaeUIzYVhSb0lHRWdOaTF0YjI1MGFDQmpiMjUwY21GamRDQjBhR0YwSUdOaGJpQmlaU0JsZUhSbGJtUmxaQ0IwYnlCaElIbGxZWElnYjNJZ2JXOXlaUzRpTENKeVpXeGxkbUZ1ZEY5MFlXZHpJanBiSW5KMVlua2diMjRnY21GcGJITWlMQ0ptZFd4c0lITjBZV05ySUdSbGRtVnNiM0J0Wlc1MElpd2ljM2x6ZEdWdElHUmxjMmxuYmlJc0ltRndhU0JwYm5SbFozSmhkR2x2YmlJc0luTjBZWEowZFhBaVhTd2lZWEJ3YkhsZmRYSnNJam9pWkdWaVltbGxRSHBsY205bmNtRjJhWFI1TG1OdkxuVnJJbjE5LkRzVExLeWNhVEVZU3laaWp3U1BEMXVMWjd4ZFA1VHBFX3dveTVJZ1NlOVk=&message_id=%3Ctcath05dmq@idnremote.com%3E
+GET /vacancies/reject?data=?data=ZXl...&message_id=tcath05dmq@idnremote.com
 ```
 
 **Success Response:**

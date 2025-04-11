@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"github.com/go-resty/resty/v2"
 	"gopkg.in/validator.v2"
 )
@@ -27,11 +28,11 @@ func NewClientServer(cfg ServerConfig) (*Server, error) {
 	}, nil
 }
 
-func (s *Server) SubmitURLVacancy(ctx context.Context, applyURL string) error {
+func (s *Server) SubmitBulkVacancies(ctx context.Context, vacancies []core.Vacancy) error {
 	payload := map[string]interface{}{
-		"submission_type":  "url",
+		"submission_type":  "bulk",
 		"submission_email": "crawler",
-		"apply_url":        applyURL,
+		"bulk_vacancies":   vacancies,
 	}
 	resp, err := s.HttpClient.R().
 		SetHeader("Content-Type", "application/json").
@@ -39,10 +40,10 @@ func (s *Server) SubmitURLVacancy(ctx context.Context, applyURL string) error {
 		SetBody(payload).
 		Post("/vacancies")
 	if err != nil {
-		return fmt.Errorf("failed to call api to submit URL the vacancy: %w", err)
+		return fmt.Errorf("failed to call api to submit bulk vacancies: %w", err)
 	}
 	if resp.IsError() {
-		return fmt.Errorf("failed to submit URL the vacancy: %s", resp.String())
+		return fmt.Errorf("failed to submit bulk vacancies: %s", resp.String())
 	}
 
 	return nil

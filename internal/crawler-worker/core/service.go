@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 	"gopkg.in/validator.v2"
 )
 
@@ -54,36 +55,29 @@ func (s *service) Run(ctx context.Context) error {
 
 	log.Printf("total vacancies in storage: %d", len(allURLVacancies))
 
-	// Track submission statistics
-	skippedAlreadyExists := 0
-	skippedAlreadyRequested := 0
-	skippedNotApplicable := 0
-	skippedSubmitError := 0
-	submittedCount := 0
-
+	filterVacancies := make([]core.Vacancy, 0)
 	for _, v := range vacancies {
 		// check if vacancy already exists
 		if _, ok := allURLVacancies[v.ApplyURL]; ok {
 			// skip if vacancy already exists
-			skippedAlreadyExists++
 			continue
 		}
 
 		// check if vacancy already requested (avoid duplicate request)
-		isRequested, err := s.ApprovalStorage.IsVacancyAlreadyRequested(ctx, v.ApplyURL)
+		isAlreadyRequested, err := s.ApprovalStorage.IsVacancyAlreadyRequested(ctx, v.ApplyURL)
 		if err != nil {
 			log.Printf("failed to check if vacancy is already requested: %s, error: %v", v.ToJSON(), err)
 			// skip error
 			continue
 		}
-		if isRequested {
-			skippedAlreadyRequested++
+		
+		if isAlreadyRequested {
 			continue
 		}
 
 		// check if vacancy is applicable for Indonesian
 		if s.EnabledApplicableChecker {
-			isApplicable, err := s.ContentChecker.IsApplicableForIndonesian(ctx, v)
+			isApplicable, err := s.ContentChecker.IsApplicable(ctx, v)
 			if err != nil {
 				log.Printf("failed to check if vacancy is applicable for indonesian: %s, error: %v", v.ToJSON(), err)
 				// skip error
@@ -91,23 +85,23 @@ func (s *service) Run(ctx context.Context) error {
 			}
 
 			if !isApplicable {
-				skippedNotApplicable++
 				continue
 			}
 		}
 
-		err = s.Server.SubmitURLVacancy(ctx, v.ApplyURL)
-		if err != nil {
-			log.Printf("failed to submit vacancy: %s, error: %v", v.ToJSON(), err)
-			skippedSubmitError++
-			// skip error
-			continue
-		}
-		submittedCount++
+		// add vacancy to filter vacancies
+		filterVacancies = append(filterVacancies, v)
 	}
 
-	log.Printf("submission summary: total=%d, submitted=%d, skipped_already_exists=%d, skipped_already_requested=%d, skipped_not_applicable=%d, skipped_submit_error=%d",
-		len(vacancies), submittedCount, skippedAlreadyExists, skippedAlreadyRequested, skippedNotApplicable, skippedSubmitError)
+	if len(filterVacancies) == 0 {
+		log.Println("no vacancies to submit")
+		return nil
+	}
+
+	err = s.Server.SubmitBulkVacancies(ctx, filterVacancies)
+	if err != nil {
+		return fmt.Errorf("failed to submit bulk vacancies: %w", err)
+	}
 
 	return nil
 }

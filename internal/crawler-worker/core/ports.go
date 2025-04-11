@@ -15,11 +15,11 @@ type VacanciesStorage interface {
 }
 
 type ContentChecker interface {
-	IsApplicableForIndonesian(ctx context.Context, v core.Vacancy) (bool, error)
+	IsApplicable(ctx context.Context, v core.Vacancy) (bool, error)
 }
 
 type Server interface {
-	SubmitURLVacancy(ctx context.Context, applyURL string) error
+	SubmitBulkVacancies(ctx context.Context, vacancies []core.Vacancy) error
 }
 
 type ApprovalStorage interface {

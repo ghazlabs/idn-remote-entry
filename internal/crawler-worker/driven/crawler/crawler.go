@@ -64,6 +64,8 @@ func (r *VacancyCrawler) Crawl(ctx context.Context) ([]core.Vacancy, error) {
 				continue
 			}
 
+			v.ShortDescription = removeUnwantedText(v.ShortDescription)
+
 			crawlerVacancies = append(crawlerVacancies, v)
 		}
 

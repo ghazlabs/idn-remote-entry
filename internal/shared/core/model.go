@@ -50,17 +50,30 @@ type SubmitType string
 const (
 	SubmitTypeManual SubmitType = "manual"
 	SubmitTypeURL    SubmitType = "url"
+	SubmitTypeBulk   SubmitType = "bulk"
 )
 
 type SubmitRequest struct {
 	SubmissionType  SubmitType `json:"submission_type"`
 	SubmissionEmail string     `json:"submission_email"`
 	Retries         int        `json:"retries"`
+	BulkVacancies   []Vacancy  `json:"bulk_vacancies,omitempty"`
 	Vacancy
 }
 
 func (r SubmitRequest) Validate() error {
-	// TODO
+	if r.SubmissionType == SubmitTypeBulk {
+		if len(r.BulkVacancies) == 0 {
+			return fmt.Errorf("bulk_vacancies cannot be empty")
+		}
+		for _, v := range r.BulkVacancies {
+			// Validate each vacancy in the bulk submission
+			if err := v.Validate(); err != nil {
+				return fmt.Errorf("invalid bulk vacancy: %w", err)
+			}
+		}
+	}
+
 	return nil
 }
 
