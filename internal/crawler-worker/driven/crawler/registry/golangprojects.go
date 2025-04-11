@@ -16,7 +16,7 @@ import (
 const (
 	golangProjectsURL             = "https://www.golangprojects.com/golang-rest-of-world-jobs.html"
 	golangProjectsConcurrentJobs  = 10
-	golangProjectsUnnecessaryTags = "head, script, style, footer, iframe, #nav-header, #mobile-header"
+	golangProjectsUnnecessaryTags = "head, nav, iframe, script, noscript, footer"
 )
 
 type GolangProjectsCrawler struct {
@@ -90,14 +90,6 @@ func (p *GolangProjectsCrawler) getLinks(ctx context.Context, url string) ([]str
 		return nil, fmt.Errorf("failed to open the URL: %w", err)
 	}
 
-	if resp.StatusCode() != 200 {
-		log.Printf("Failed to get golangprojects page with status code: %d", resp.StatusCode())
-		if resp.StatusCode() == 403 {
-			log.Printf("WARNING: GolangProjects returned 403 Forbidden. The site is likely blocking our crawler.")
-		}
-		return []string{}, nil
-	}
-
 	// parse the HTML content
 	respBody := bytes.NewReader(resp.Body())
 	doc, err := goquery.NewDocumentFromReader(respBody)
@@ -105,31 +97,33 @@ func (p *GolangProjectsCrawler) getLinks(ctx context.Context, url string) ([]str
 		return nil, fmt.Errorf("failed to parse the HTML content: %w", err)
 	}
 
-	var jobLinks []string
-
-	// Find all job listings by their container divs
-	doc.Find("div.bg-csdpromobg1, div.bg-csdpromobg2").Each(func(i int, s *goquery.Selection) {
-		// Within each listing, find the anchor tag (job link)
-		link := s.Find("a").First()
-		href, exists := link.Attr("href")
-		if exists {
-			if strings.HasPrefix(href, "/golang-") {
-				fullURL := "https://www.golangprojects.com" + href
-				jobLinks = append(jobLinks, fullURL)
-			}
-		}
+	// Remove unnecessary tags from the document
+	doc.Find(golangProjectsUnnecessaryTags).Each(func(i int, s *goquery.Selection) {
+		s.Remove()
 	})
 
-	// Try alternative approach - look for links directly
-	if len(jobLinks) == 0 {
-		doc.Find("a[href^='/golang-go-job-']").Each(func(i int, s *goquery.Selection) {
-			href, exists := s.Attr("href")
+	var jobLinks []string
+
+	// Find job links after each hr.clear-both but before the next hr.clear-both
+	doc.Find("hr.clear-both").Each(func(i int, hr *goquery.Selection) {
+		nextUntilHr := hr.NextUntil("hr.clear-both")
+
+		// Check if the job posting contains "Worldwide, 100% Remote"
+		jobText := nextUntilHr.Text()
+		if !strings.Contains(jobText, "Worldwide, 100% Remote") {
+			return
+		}
+
+		nextUntilHr.Find("a[href]").First().Each(func(j int, a *goquery.Selection) {
+			href, exists := a.Attr("href")
 			if exists {
-				fullURL := "https://www.golangprojects.com" + href
-				jobLinks = append(jobLinks, fullURL)
+				if strings.HasPrefix(href, "/") {
+					href = "https://www.golangprojects.com" + href
+				}
+				jobLinks = append(jobLinks, href)
 			}
 		})
-	}
+	})
 
 	return jobLinks, nil
 }
@@ -147,34 +141,6 @@ func (p *GolangProjectsCrawler) getInfo(ctx context.Context, url string) (core.V
 		return vacancy, fmt.Errorf("failed to open the URL: %w", err)
 	}
 
-	// Handle non-200 responses
-	if resp.StatusCode() != 200 {
-		log.Printf("Failed to get job page with status code: %d", resp.StatusCode())
-		if resp.StatusCode() == 403 {
-			log.Printf("WARNING: GolangProjects returned 403 Forbidden for job page. Creating placeholder vacancy.")
-		}
-
-		// Create a placeholder vacancy
-		vacancy.ApplyURL = url
-
-		// Extract job title from URL
-		urlParts := strings.Split(url, "/")
-		if len(urlParts) > 0 {
-			lastPart := urlParts[len(urlParts)-1]
-			lastPart = strings.ReplaceAll(lastPart, "-", " ")
-			lastPart = strings.ReplaceAll(lastPart, ".html", "")
-			lastPart = strings.ReplaceAll(lastPart, "remotework", "")
-			vacancy.JobTitle = strings.Title(lastPart)
-		} else {
-			vacancy.JobTitle = "Golang Developer Position"
-		}
-
-		vacancy.CompanyName = "Company on GolangProjects"
-		vacancy.ShortDescription = "This job was found on GolangProjects. Please visit the website directly for more details."
-
-		return vacancy, nil
-	}
-
 	// parse the HTML content
 	respBody := bytes.NewReader(resp.Body())
 	doc, err := goquery.NewDocumentFromReader(respBody)
@@ -182,7 +148,7 @@ func (p *GolangProjectsCrawler) getInfo(ctx context.Context, url string) (core.V
 		return vacancy, fmt.Errorf("failed to parse the HTML content: %w", err)
 	}
 
-	// Find the "Apply now!" button URL first - this is the correct apply URL
+	// Find the "Apply now!" button URL first
 	applyURL := ""
 	doc.Find("a.cs-button[role='button']").Each(func(i int, s *goquery.Selection) {
 		buttonText := strings.TrimSpace(s.Text())
@@ -195,96 +161,50 @@ func (p *GolangProjectsCrawler) getInfo(ctx context.Context, url string) (core.V
 		}
 	})
 
-	// If "Apply now!" button was found, use it as apply URL
-	if applyURL != "" {
-		vacancy.ApplyURL = applyURL
-	} else {
-		// Fall back to the job posting URL if no apply button found
-		vacancy.ApplyURL = url
+	if applyURL == "" {
+		return vacancy, fmt.Errorf("no apply URL found, skipping vacancy")
 	}
 
-	// Based on the HTML structure, extract job details
+	if applyURL != "" {
+		vacancy.ApplyURL = applyURL
+	}
 
-	// Find the job title - it's typically in the <b> tag within the same anchor that leads to the job
-	jobTitle := doc.Find("a b").First().Text()
+	// Find the job title
+	jobTitle := doc.Find("h1").First().Text()
 	if jobTitle != "" {
 		vacancy.JobTitle = strings.TrimSpace(jobTitle)
 	}
 
-	// If we couldn't find the title with that selector, try others
-	if vacancy.JobTitle == "" {
-		// Try to find it in the page title
-		pageTitle := doc.Find("title").Text()
-		if strings.Contains(pageTitle, ":") {
-			parts := strings.SplitN(pageTitle, ":", 2)
-			vacancy.JobTitle = strings.TrimSpace(parts[1])
-		} else {
-			vacancy.JobTitle = strings.TrimSpace(pageTitle)
-		}
-	}
-
-	// Find company name - often near the job title or in the URL
-	// In GolangProjects, company name is often part of the job title separated by " - "
-	if strings.Contains(vacancy.JobTitle, " - ") {
-		parts := strings.Split(vacancy.JobTitle, " - ")
-		if len(parts) >= 2 {
-			// Last part is typically the company name
-			vacancy.CompanyName = strings.TrimSpace(parts[len(parts)-1])
-			// Join all parts except the last one as the job title
-			vacancy.JobTitle = strings.TrimSpace(strings.Join(parts[:len(parts)-1], " - "))
-		}
-	}
-
-	// If company name still not found, try to extract from image alt text
-	if vacancy.CompanyName == "" {
-		imgAlt := doc.Find("img").First().AttrOr("alt", "")
-		if strings.Contains(imgAlt, "at ") {
-			parts := strings.Split(imgAlt, "at ")
-			if len(parts) >= 2 {
-				vacancy.CompanyName = strings.TrimSpace(parts[len(parts)-1])
+	// Find company name
+	doc.Find("h3").Each(func(i int, s *goquery.Selection) {
+		text := s.Text()
+		if strings.Contains(text, "Company: ") {
+			companyName := strings.TrimSpace(strings.TrimPrefix(text, "Company: "))
+			if companyName != "" {
+				vacancy.CompanyName = companyName
 			}
 		}
-	}
+	})
 
-	// Get the job description - it's often inside an <i> tag with class="text-sm"
-	descText := doc.Find("i.text-sm").Text()
-	if descText != "" {
-		vacancy.ShortDescription = strings.TrimSpace(descText)
-	}
+	// Get the job description
+	var descBuilder strings.Builder
+	jobDescSection := doc.Find("b:contains('Job description')").Parent()
+	if jobDescSection.Length() > 0 {
+		var currentNode *goquery.Selection = jobDescSection.Next()
+		for currentNode.Length() > 0 {
+			// Stop if we hit the "Other Golang jobs" heading
+			if currentNode.Find("h3:contains('Other Golang jobs')").Length() > 0 {
+				break
+			}
 
-	// If no description found, use the entire page text
-	if vacancy.ShortDescription == "" {
-		// Get all text from the page
-		vacancy.ShortDescription = strings.TrimSpace(doc.Text())
-	}
+			text := strings.TrimSpace(currentNode.Text())
+			if text != "" {
+				descBuilder.WriteString(text + "\n")
+			}
 
-	// Fallbacks for missing information
-	if vacancy.JobTitle == "" {
-		// Try to extract from URL as last resort
-		urlParts := strings.Split(url, "/")
-		if len(urlParts) > 0 {
-			lastPart := urlParts[len(urlParts)-1]
-			lastPart = strings.ReplaceAll(lastPart, "-", " ")
-			lastPart = strings.ReplaceAll(lastPart, ".html", "")
-			lastPart = strings.ReplaceAll(lastPart, "remotework", "")
-			vacancy.JobTitle = strings.Title(lastPart)
-		} else {
-			vacancy.JobTitle = "Golang Developer"
+			currentNode = currentNode.Next()
 		}
-	}
-
-	if vacancy.CompanyName == "" {
-		vacancy.CompanyName = "Company on GolangProjects"
-	}
-
-	if vacancy.ShortDescription == "" {
-		vacancy.ShortDescription = "Please visit the job posting for more details."
-	}
-
-	// Truncate the description if it's too long
-	maxDescLen := 500
-	if len(vacancy.ShortDescription) > maxDescLen {
-		vacancy.ShortDescription = vacancy.ShortDescription[:maxDescLen] + "..."
+		vacancy.ShortDescription = strings.TrimSpace(descBuilder.String())
 	}
 
 	return vacancy, nil

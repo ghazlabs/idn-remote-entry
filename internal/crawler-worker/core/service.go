@@ -43,12 +43,6 @@ func (s *service) Run(ctx context.Context) error {
 		return fmt.Errorf("failed to crawl: %w", err)
 	}
 
-	// Print all vacancies found during crawling
-	for i, v := range vacancies {
-		log.Printf("Vacancy #%d: Title=%s, Company=%s, URL=%s",
-			i+1, v.JobTitle, v.CompanyName, v.ApplyURL)
-	}
-
 	log.Printf("found %d vacancies\n", len(vacancies))
 
 	// It more easy to get all url vacancies from storage and filter out already existing vacancies
