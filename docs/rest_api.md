@@ -216,7 +216,7 @@ A successful call indicates that the vacancy has been approved and ready to be p
 
 | Field        | Type   | Required | Description                                                           |
 | ------------ | ------ | -------- | --------------------------------------------------------------------- |
-| `data`       | String | Yes      | The value is `base64` of `JSON Web Token` consisting of vacancy data. |
+| `data`       | String | Yes      | The value is `JSON Web Token` consisting of vacancy data. |
 | `message_id` | String | No       | Message id of the email.                                              |
 
 **Example Call:**
@@ -251,7 +251,7 @@ A successful call indicates that the vacancy has been rejected and will be ignor
 
 | Field        | Type   | Required | Description                                                           |
 | ------------ | ------ | -------- | --------------------------------------------------------------------- |
-| `data`       | String | Yes      | The value is `base64` of `JSON Web Token` consisting of vacancy data. |
+| `data`       | String | Yes      | The value is `JSON Web Token` consisting of vacancy data. |
 | `message_id` | String | No       | Message id of the email.                                              |
 
 **Example Call:**
