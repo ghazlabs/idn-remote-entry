@@ -21,10 +21,10 @@ func TestServiceHandleRequest(t *testing.T) {
 			name: "submission type bulk",
 			setupMocks: func(ctx context.Context, q *mockQueue, e *mockEmailClient, tok *mockTokenizer, a *mockApproval, s *mockApprovalStorage) {
 				tok.On("EncodeRequest", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
-					return req.JobTitle == "Test 1"
+					return req.ApplyURL == "https://example.com/apply1"
 				})).Return("mock-token1", nil)
 				tok.On("EncodeRequest", mock.MatchedBy(func(req shcore.SubmitRequest) bool {
-					return req.JobTitle == "Test 2"
+					return req.ApplyURL == "https://example.com/apply2"
 				})).Return("mock-token2", nil)
 				e.On("SendBulkApprovalRequest", ctx, mock.MatchedBy(func(req shcore.SubmitRequest) bool {
 					return req.SubmissionEmail == "crawler"
@@ -40,12 +40,12 @@ func TestServiceHandleRequest(t *testing.T) {
 					{
 						JobTitle:    "Test 1",
 						CompanyName: "Test 1 Company",
-						ApplyURL:    "https://example.com/apply",
+						ApplyURL:    "https://example.com/apply1",
 					},
 					{
 						JobTitle:    "Test 2",
 						CompanyName: "Test 2 Company",
-						ApplyURL:    "https://example.com/apply",
+						ApplyURL:    "https://example.com/apply2",
 					},
 				},
 			},
