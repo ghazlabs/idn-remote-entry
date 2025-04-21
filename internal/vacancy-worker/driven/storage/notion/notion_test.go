@@ -2,6 +2,7 @@ package notion_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
@@ -73,6 +74,7 @@ Donec eget auctor nunc. Phasellus ullamcorper odio eu odio ultrices maximus. Ves
 	require.NoError(t, err)
 
 	require.NotEmpty(t, rec.ID)
+	require.Equal(t, fmt.Sprintf("%s%s", storage.URIIDNRemote, rec.ID), rec.PublicURL)
 }
 
 func TestSaveNoRelevantTags(t *testing.T) {
@@ -99,4 +101,5 @@ func TestSaveNoRelevantTags(t *testing.T) {
 	rec, err := s.Save(context.Background(), vacancyLongDesc)
 	require.NoError(t, err)
 	require.NotEmpty(t, rec.ID)
+	require.Equal(t, fmt.Sprintf("%s%s", storage.URIIDNRemote, rec.ID), rec.PublicURL)
 }

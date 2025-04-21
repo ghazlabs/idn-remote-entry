@@ -10,6 +10,11 @@ import (
 	"gopkg.in/validator.v2"
 )
 
+const (
+	// TODO: move this to config
+	URIIDNRemote = "https://idnremote.com/#/jobs/"
+)
+
 type NotionStorage struct {
 	NotionStorageConfig
 }
@@ -50,7 +55,7 @@ func (s *NotionStorage) Save(ctx context.Context, v core.Vacancy) (*core.Vacancy
 	rec := &core.VacancyRecord{
 		ID:        respBody.ID,
 		Vacancy:   v,
-		PublicURL: respBody.PublicURL,
+		PublicURL: fmt.Sprintf("%s%s", URIIDNRemote, respBody.ID),
 	}
 	return rec, nil
 }
