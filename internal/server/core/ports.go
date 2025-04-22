@@ -6,6 +6,10 @@ import (
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
 )
 
+type VacancyResolver interface {
+	Resolve(ctx context.Context, url string) (*core.Vacancy, error)
+}
+
 type Queue interface {
 	Put(ctx context.Context, req core.SubmitRequest) error
 }
