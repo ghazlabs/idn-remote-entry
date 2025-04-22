@@ -1,4 +1,4 @@
-FROM golang:1.23.5-alpine3.21 AS base
+FROM golang:1.23.4-bookworm AS base
 
 WORKDIR /go/src/github.com/ghazlabs/idn-remote-entry
 
@@ -11,8 +11,8 @@ COPY ./cmd/server ./cmd/server
 WORKDIR /go/src/github.com/ghazlabs/idn-remote-entry/cmd/server
 RUN go build -o server
 
-FROM alpine:3.21
-RUN apk add ca-certificates tzdata
+FROM chromedp/headless-shell:133.0.6905.0
+RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates
 
 WORKDIR /app
 COPY --from=base /go/src/github.com/ghazlabs/idn-remote-entry/cmd/server/server /app/server
