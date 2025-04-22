@@ -16,6 +16,7 @@ type Service interface {
 }
 
 type ServiceConfig struct {
+	VacancyResolver VacancyResolver `validate:"nonnil"`
 	Queue           Queue           `validate:"nonnil"`
 	Email           EmailClient     `validate:"nonnil"`
 	Tokenizer       Tokenizer       `validate:"nonnil"`
@@ -48,12 +49,31 @@ func (s *service) HandleRequest(ctx context.Context, req core.SubmitRequest) err
 		return s.handleBulkRequest(ctx, req)
 	}
 
-	token, err := s.Tokenizer.EncodeRequest(req)
-	if err != nil {
-		return fmt.Errorf("failed to encode token: %w", err)
+	// handle request
+	switch req.SubmissionType {
+	case core.SubmitTypeManual:
+	case core.SubmitTypeURL:
+		// resolve apply url to get vacancy details
+		v, err := s.VacancyResolver.Resolve(ctx, req.Vacancy.ApplyURL)
+		if err != nil {
+			// the error will be determined by resolver implementation
+			return err
+		}
+
+		// update vacancy with resolved details
+		req.Vacancy = *v
+
+		// since we already resolve the submission
+		// just update submission type to manual
+		req.SubmissionType = core.SubmitTypeManual
 	}
 
 	if s.Approval.NeedsApproval(req.SubmissionEmail) {
+		token, err := s.Tokenizer.EncodeRequest(req)
+		if err != nil {
+			return fmt.Errorf("failed to encode token: %w", err)
+		}
+
 		messageID, err := s.Email.SendApprovalRequest(ctx, req, token)
 		if err != nil {
 			return fmt.Errorf("failed to send approval request: %w", err)
