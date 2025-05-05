@@ -26,7 +26,7 @@ services:
       - 8306:3306
     volumes:
       - ../../../docs/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
-      - mysql_data:/bitnami/mysql/data
+      - mysql_idn_remote_entry_data:/bitnami/mysql/data
     environment:
       - MYSQL_ROOT_PASSWORD=test1234
       - MYSQL_DATABASE=idnremote
@@ -121,4 +121,4 @@ services:
 
 volumes:
   rabbitmq_data:
-  mysql_data:
+  mysql_idn_remote_entry_data:
