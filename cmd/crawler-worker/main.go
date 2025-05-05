@@ -35,11 +35,17 @@ const (
 )
 
 func main() {
+	cfBypass, err := crawler.NewCloudflareBypassService(true)
+	if err != nil {
+		log.Fatalf("failed to create cloudflare bypass service: %v", err)
+	}
+	defer cfBypass.Close()
+
 	// initialize crawler
 	crawlRegistryList := []crawler.CrawlRegistry{}
 	if env.GetBool(envKeyEnabledWeWorkRemotelyCrawler) {
 		wwrCrawler, err := registry.NewWeWorkRemotelyCrawler(registry.WeWorkRemotelyCrawlerConfig{
-			HttpClient: resty.New(),
+			CloudflareBypass: cfBypass,
 		})
 		if err != nil {
 			log.Fatalf("failed to initialize wwr crawler: %v", err)

@@ -1,15 +1,14 @@
 package registry
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"log"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/ghazlabs/idn-remote-entry/internal/crawler-worker/driven/crawler"
 	"github.com/ghazlabs/idn-remote-entry/internal/shared/core"
-	"github.com/go-resty/resty/v2"
 	"gopkg.in/validator.v2"
 )
 
@@ -24,7 +23,7 @@ type WeWorkRemotelyCrawler struct {
 }
 
 type WeWorkRemotelyCrawlerConfig struct {
-	HttpClient *resty.Client `validate:"nonnil"`
+	CloudflareBypass *crawler.CloudflareBypassService `validate:"nonnil"`
 }
 
 func NewWeWorkRemotelyCrawler(cfg WeWorkRemotelyCrawlerConfig) (*WeWorkRemotelyCrawler, error) {
@@ -38,6 +37,9 @@ func NewWeWorkRemotelyCrawler(cfg WeWorkRemotelyCrawlerConfig) (*WeWorkRemotelyC
 }
 
 func (p *WeWorkRemotelyCrawler) Crawl(ctx context.Context) ([]core.Vacancy, error) {
+	log.Println("Crawling WeWorkRemotely...")
+
+	// Get vacancies links
 	vacanciesLinks, err := p.getLinks(ctx, url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get vacancies links: %w", err)
@@ -80,15 +82,14 @@ func (p *WeWorkRemotelyCrawler) Crawl(ctx context.Context) ([]core.Vacancy, erro
 }
 
 func (p *WeWorkRemotelyCrawler) getLinks(ctx context.Context, url string) ([]string, error) {
-	// get the html content of the URL
-	resp, err := p.HttpClient.R().SetContext(ctx).Get(url)
+	// Get the HTML content of the URL using Cloudflare bypass
+	html, err := p.CloudflareBypass.GetHTML(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open the URL: %w", err)
 	}
 
-	// parse the HTML content
-	respBody := bytes.NewReader(resp.Body())
-	doc, err := goquery.NewDocumentFromReader(respBody)
+	// Parse the HTML content
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse the HTML content: %w", err)
 	}
@@ -107,20 +108,26 @@ func (p *WeWorkRemotelyCrawler) getLinks(ctx context.Context, url string) ([]str
 		}
 	})
 
+	log.Printf("Found %d job links in WeWorkRemotely", len(jobLinks))
+	if len(jobLinks) == 0 {
+		// If no job links found, likely means Cloudflare is still blocking
+		return nil, fmt.Errorf("no job links found, Cloudflare may still be blocking access")
+	}
+
 	return jobLinks, nil
 }
 
 func (p *WeWorkRemotelyCrawler) getInfo(ctx context.Context, url string) (core.Vacancy, error) {
 	vacancy := core.Vacancy{}
-	// get the html content of the URL
-	resp, err := p.HttpClient.R().SetContext(ctx).Get(url)
+
+	// Get the HTML content of the URL using Cloudflare bypass
+	html, err := p.CloudflareBypass.GetHTML(url)
 	if err != nil {
 		return vacancy, fmt.Errorf("failed to open the URL: %w", err)
 	}
 
-	// parse the HTML content
-	respBody := bytes.NewReader(resp.Body())
-	doc, err := goquery.NewDocumentFromReader(respBody)
+	// Parse the HTML content
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
 		return vacancy, fmt.Errorf("failed to parse the HTML content: %w", err)
 	}
@@ -135,6 +142,7 @@ func (p *WeWorkRemotelyCrawler) getInfo(ctx context.Context, url string) (core.V
 	vacancy.CompanyName = strings.TrimSpace(doc.Find("div.lis-container__job__sidebar__companyDetails__info__title h3").Text())
 	vacancy.ApplyURL, _ = doc.Find("a#job-cta-alt").Attr("href")
 
+	// Extract job description
 	var descBuilder strings.Builder
 	doc.Find("div.lis-container__job__content__description").Children().Each(func(i int, s *goquery.Selection) {
 		text := strings.TrimSpace(s.Text())
