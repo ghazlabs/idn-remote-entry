@@ -1,4 +1,4 @@
-FROM golang:1.23.5-alpine3.21 AS base
+FROM golang:1.23.5-bullseye AS base
 
 WORKDIR /go/src/github.com/ghazlabs/idn-remote-entry
 
@@ -11,8 +11,11 @@ COPY ./cmd/crawler-worker ./cmd/crawler-worker
 WORKDIR /go/src/github.com/ghazlabs/idn-remote-entry/cmd/crawler-worker
 RUN go build -o crawler-worker
 
-FROM alpine:3.21
-RUN apk add ca-certificates tzdata
+FROM debian:bullseye
+RUN apt update
+
+# need for go-rod
+RUN apt install -y chromium
 
 WORKDIR /app
 COPY --from=base /go/src/github.com/ghazlabs/idn-remote-entry/cmd/crawler-worker/crawler-worker /app/crawler-worker
