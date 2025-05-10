@@ -12,7 +12,7 @@ import (
 
 const (
 	// TODO: move this to config
-	URIIDNRemote = "https://idnremote.com/#/jobs/"
+	URIIDNRemote = "https://idnremote.com/jobs/"
 )
 
 type NotionStorage struct {
